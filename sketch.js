@@ -16,18 +16,17 @@ const mappa = new Mappa('Leaflet');
 var latd;
 var lng;
 
-//Storing data variable
+//variables for speech
+let speechRec;
+
+//variables for sentiment analysis
+let sentiment;
+let sentimentResult;
+
+//Storing data variables
 let NumbersOfYou = [];
 
-//Scene Management
-let scene = 0;
-
-//Timer management
-let timer = 3;
-let timerIsDone = false;
-
-//preload function
-//for faceAPI
+//**PRELOAD function
 function preload() 
 {
   // Load the face-api.js models
@@ -38,14 +37,21 @@ function preload()
   //for geolocation
   locationData = getCurrentPosition();
 
+  //for sentiment analysis
+  sentiment = ml5.sentiment('MovieReviews');
 
 }
 
 function setup() 
 {
-  //canvas management
-  // canvas = createCanvas(windowWidth, windowHeight);
+
+  //To do: check whether the date is a new date
   
+  //loading the Numbers of You array
+  NumbersOfYou = getItem('NumbersOfYou');
+  console.log("loaded Numbers: " + NumbersOfYou.length);
+
+
   //video data capture
   capture = createCapture(VIDEO);
   capture.id("video_element");
@@ -53,24 +59,13 @@ function setup()
   capture.size(width, height);
   capture.hide();  
   
-  // //geolocation capture
-  // latd = locationData.latitude;
-  // lng = locationData.longitude;
-  // const options = 
-  // {
-  //   lat: latd,
-  //   lng: lng,
-  //   zoom: 15,
-  //   style: "http://{s}.tile.osm.org/{z}/{x}/{y}.png"
-  // }
-  // myMap = mappa.tileMap(options); 
-  // myMap.overlay(canvas);
-  //fill(255, 0, 0);
-
-  //loading the Numbers of You array
-  NumbersOfYou = getItem('NumbersOfYou');
-  console.log("loaded Numbers: " + NumbersOfYou.length);
-
+  //speech stuff
+  speechRec = new p5.SpeechRec('en-US', gotSpeech);
+  let continuous = true;
+  let interim = false;
+  speechRec.start(continuous, interim);
+  
+  //let's start the thing
   introScene();
 
 
@@ -78,27 +73,6 @@ function setup()
 
 function draw() 
 {
-  //background(255, 0, 0);
-
-  // switch(scene) {
-  //   case 0:
-  //     introScene();
-  //     break;
-  //   case 1:
-  //     getBasicDataScene();
-  //     break;
-  //   case 2:
-  //     cameraScene();
-  //     break;
-  //   // case 3:
-  //   //   soundScene();
-  //   //   break;
-  //   case 3:
-  //     endScene();
-  //     break;
-  //   default:
-  //     break;
-  // }
   
 }
 
@@ -136,7 +110,16 @@ function cameraScene()
   text("Getting Image Data", windowWidth/2, windowHeight/2 + 100);
   image(capture, 0, 0, width, height/2, 0, 0, 0, 0, CONTAIN); 
   faceRead();
-  timer = setTimeout(endScene, 5000);
+  timer = setTimeout(soundScene, 5000);
+}
+
+function soundScene()
+{
+  //speech stuff
+  speechRec = new p5.SpeechRec('en-US', gotSpeech);
+  let continuous = true;
+  let interim = false;
+  speechRec.start(continuous, interim);
 }
 
 function endScene()
@@ -220,6 +203,27 @@ function showFaceDetectionData(data)
   }
   console.log('mood ' + highestString)
 
+}
+
+// **SPEECH RECOGNITION
+function gotSpeech()
+{
+		if(speechRec.resultValue==true) 
+    {
+			background(192, 255, 192);
+			text(speechRec.resultString, width/2, height/2);
+      getSentiment(speechRec.resultString);
+			console.log(speechRec.resultString);
+		}
+}
+
+// **SENTIMENT ANALYSIS
+function getSentiment(result)
+{
+  const prediction = sentiment.predict(result);
+
+  console.log(prediction);
+  setTimeout(endScene, 7000);
 }
 
 
