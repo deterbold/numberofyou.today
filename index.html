@@ -119,11 +119,11 @@
         </div>
         <div class="back">
           <ul>
-            <li>Gender: Male</li>
-            <li>Age: 25</li>
-            <li>Mood: Happy</li>
-            <li>Location: New York</li>
-            <li>Humor: Witty</li>
+            <li id="gender">Gender: Male</li>
+            <li id="age">Age: 25</li>
+            <li id="mood">Mood: Happy</li>
+            <li id="location">Location: New York</li>
+            <li id="humor">Humor: Witty</li>
           </ul>
         </div>
       </div>
@@ -141,8 +141,27 @@
     let number = 42;
     document.getElementById("number").textContent = number;
 
+    // Accessing individual elements
+    const gender = document.getElementById("gender");
+    const age = document.getElementById("age");
+    const mood = document.getElementById("mood");
+    const location = document.getElementById("location");
+    const humor = document.getElementById("humor");
+
+    // Example usage:
+    gender.textContent = "Gender: Female";
+    age.textContent = "Age: 30";
+    mood.textContent = "Mood: Sad";
+    location.textContent = "Location: Los Angeles";
+    humor.textContent = "Humor: Sarcastic";
+
+    // Change background color with JavaScript
+    function changeBackgroundColor(color) {
+      document.body.style.backgroundColor = color;
+    }
   </script>
 </body>
 </html>
+
 
 
