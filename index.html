@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html>
 <head>
 	<meta charset="UTF-8">
@@ -31,20 +31,118 @@
 <body>
 	<h1>Number of You: Today</h1>
 	<p id="number"></p>
-	<!-- <script>
-		let backgroundColors = ["#FFFFFF", "#FF0000", "#00FF00", "#0000FF"]; // Array of background colors
-		let currentBackgroundColorIndex = 0; // Index of the current background color
-		
-		function changeBackgroundColor() {
-			currentBackgroundColorIndex = (currentBackgroundColorIndex + 1) % backgroundColors.length;
-			document.body.style.backgroundColor = backgroundColors[currentBackgroundColorIndex];
-		}
-		
-		setInterval(changeBackgroundColor, 5000); // Change background color every 5 seconds
-		
-		let number = Math.floor(Math.random() * 100); // Generate a random number between 0 and 99
-		document.getElementById("number").textContent = number; // Display the number in the <p> element
-	</script> -->
   <script src="sketch.js"></script>
 </body>
+</html> -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Number of You</title>
+  <style>
+    body {
+      background-color: #FFFFFF;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      text-align: center;
+    }
+    h1 {
+      font-family: Futura, sans-serif;
+      font-weight: bold;
+      font-size: 48px;
+      position: fixed;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px;
+      margin: 0;
+      background-color: #FFFFFF;
+      z-index: 1;
+    }
+    p {
+      font-family: Futura, sans-serif;
+      font-size: 24px;
+      margin-top: 50px;
+    }
+    #number {
+      font-size: 96px;
+    }
+    .flip-container {
+      perspective: 1000px;
+      display: inline-block;
+      cursor: pointer;
+    }
+    .flip-container .flipper {
+      transition: 0.6s;
+      transform-style: preserve-3d;
+      position: relative;
+    }
+    .flip-container .front,
+    .flip-container .back {
+      backface-visibility: hidden;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    .flip-container .front {
+      z-index: 2;
+    }
+    .flip-container .back {
+      transform: rotateY(180deg);
+      padding: 20px;
+      border: 1px solid #000000;
+      border-radius: 5px;
+    }
+    .flip-container.flipped .flipper {
+      transform: rotateY(180deg);
+    }
+  </style>
+  <script src="libraries/p5.min.js"></script>
+  <script src="libraries/p5.sound.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js/dist/face-api.min.js"></script>
+  <script src="libraries/ml5.min.js"></script>
+  <script src="libraries/p5.geolocation.js"></script>
+  <script src="libraries/mappa.js"></script>
+</head>
+<body>
+  <h1>Number of You: Today</h1>
+  <div class="container">
+    <div class="flip-container" onclick="flip()">
+      <div class="flipper">
+        <div class="front">
+          <p id="number">42</p>
+        </div>
+        <div class="back">
+          <ul>
+            <li>Gender: Male</li>
+            <li>Age: 25</li>
+            <li>Mood: Happy</li>
+            <li>Location: New York</li>
+            <li>Humor: Witty</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    let isFlipped = false;
+
+    function flip() {
+      const flipContainer = document.querySelector('.flip-container');
+      flipContainer.classList.toggle('flipped');
+      isFlipped = !isFlipped;
+    }
+
+    let number = 42;
+    document.getElementById("number").textContent = number;
+
+  </script>
+</body>
 </html>
+
+
