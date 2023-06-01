@@ -1,4 +1,4 @@
-<!-- <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
 	<meta charset="UTF-8">
@@ -27,14 +27,15 @@
   <script src="libraries/ml5.min.js"></script>
     <script src="libraries/p5.geolocation.js"></script>
     <script src="libraries/mappa.js"></script>
+    <script src="libraries/p5.speech.js"></script>
   </head>
 <body>
 	<h1>Number of You: Today</h1>
 	<p id="number"></p>
   <script src="sketch.js"></script>
 </body>
-</html> -->
-<!DOCTYPE html>
+</html>
+<!-- <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
@@ -115,7 +116,7 @@
     <div class="flip-container" onclick="flip()">
       <div class="flipper">
         <div class="front">
-          <p id="number">42</p>
+          <p id="number"></p>
         </div>
         <div class="back">
           <ul>
@@ -129,39 +130,9 @@
       </div>
     </div>
   </div>
-  <script>
-    let isFlipped = false;
-
-    function flip() {
-      const flipContainer = document.querySelector('.flip-container');
-      flipContainer.classList.toggle('flipped');
-      isFlipped = !isFlipped;
-    }
-
-    let number = 42;
-    document.getElementById("number").textContent = number;
-
-    // Accessing individual elements
-    const gender = document.getElementById("gender");
-    const age = document.getElementById("age");
-    const mood = document.getElementById("mood");
-    const location = document.getElementById("location");
-    const humor = document.getElementById("humor");
-
-    // Example usage:
-    gender.textContent = "Gender: Female";
-    age.textContent = "Age: 30";
-    mood.textContent = "Mood: Sad";
-    location.textContent = "Location: Los Angeles";
-    humor.textContent = "Humor: Sarcastic";
-
-    // Change background color with JavaScript
-    function changeBackgroundColor(color) {
-      document.body.style.backgroundColor = color;
-    }
-  </script>
+  <script src="sketch.js"></script>
 </body>
-</html>
+</html> -->
 
 
 

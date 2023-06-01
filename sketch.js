@@ -47,9 +47,9 @@ function setup()
 
   //To do: check whether the date is a new date
   
-  //loading the Numbers of You array
-  NumbersOfYou = getItem('NumbersOfYou');
-  console.log("loaded Numbers: " + NumbersOfYou.length);
+  // //loading the Numbers of You array
+  // NumbersOfYou = getItem('NumbersOfYou');
+  // console.log("loaded Numbers: " + NumbersOfYou.length);
 
 
   //video data capture
@@ -59,22 +59,82 @@ function setup()
   capture.size(width, height);
   capture.hide();  
   
-  //speech stuff
-  speechRec = new p5.SpeechRec('en-US', gotSpeech);
-  let continuous = true;
-  let interim = false;
-  speechRec.start(continuous, interim);
-  
   //let's start the thing
   introScene();
 
 
 }
 
-function draw() 
-{
+
+// //**PRELOAD function
+// function preload() {
+//   // Load the face-api.js models
+//   faceapi.loadSsdMobilenetv1Model(model_url);
+//   faceapi.loadAgeGenderModel(model_url);
+//   faceapi.loadFaceExpressionModel(model_url);
+
+//   // for geolocation
+//   if (!navigator.geolocation) {
+//     // Geolocation is not available
+//     // Handle the error here, e.g., display an error message
+//     console.error("Geolocation is not available.");
+//     return;
+//   }
+
+//   // for sentiment analysis
+//   sentiment = ml5.sentiment('MovieReviews');
+// }
+
+// function setup() {
+//   // To do: check whether the date is a new date
+
+//   // // Loading the Numbers of You array
+//   // NumbersOfYou = getItem('NumbersOfYou');
+//   // console.log("loaded Numbers: " + NumbersOfYou.length);
+
+//   // Check camera access
+//   navigator.mediaDevices.getUserMedia({ video: true })
+//     .then(function (videoStream) {
+//       // Camera access granted
+
+//       // Check microphone access
+//       navigator.mediaDevices.getUserMedia({ audio: true })
+//         .then(function (audioStream) {
+//           // Microphone access granted
+
+//           // Video data capture
+//           capture = createCapture(VIDEO);
+//           capture.id("video_element");
+//           input = document.getElementById('video_element');
+//           capture.size(width, height);
+//           capture.hide();
+
+//           // Speech stuff
+//           speechRec = new p5.SpeechRec('en-US', gotSpeech);
+//           let continuous = true;
+//           let interim = false;
+//           speechRec.start(continuous, interim);
+
+//           // Let's start the thing
+//           introScene();
+//         })
+//         .catch(function (error) {
+//           // Microphone access denied or not available
+//           // Handle the error here, e.g., display an error message
+//           console.error("Microphone access denied or not available.");
+//         });
+//     })
+//     .catch(function (error) {
+//       // Camera access denied or not available
+//       // Handle the error here, e.g., display an error message
+//       console.error("Camera access denied or not available.");
+//     });
+// }
+
+// function draw() 
+// {
   
-}
+// }
 
 //FLOW CONTROL - SCENES
 
@@ -115,15 +175,17 @@ function cameraScene()
 
 function soundScene()
 {
+  console.log("Speech Scene called");
   //speech stuff
   speechRec = new p5.SpeechRec('en-US', gotSpeech);
-  let continuous = true;
+  let continuous = false;
   let interim = false;
   speechRec.start(continuous, interim);
 }
 
 function endScene()
 {
+  console.log("endScene called");
   noLoop();
   background(255);
   fill(255, 0, 0);
@@ -206,15 +268,24 @@ function showFaceDetectionData(data)
 }
 
 // **SPEECH RECOGNITION
+
 function gotSpeech()
 {
+  console.log("gotSpeech called");
 		if(speechRec.resultValue==true) 
     {
 			background(192, 255, 192);
 			text(speechRec.resultString, width/2, height/2);
-      getSentiment(speechRec.resultString);
 			console.log(speechRec.resultString);
 		}
+    speechRec.onEnd = speechReconEnded;
+}
+
+function speechReconEnded()
+{
+  console.log("speechReconEnded called");
+  getSentiment(speechRec.resultString);
+  setTimeout(endScene, 4000);
 }
 
 // **SENTIMENT ANALYSIS
@@ -223,7 +294,31 @@ function getSentiment(result)
   const prediction = sentiment.predict(result);
 
   console.log(prediction);
-  setTimeout(endScene, 7000);
+
+  sentimentResult = prediction.score;
+  
+  // a switch statement that divides the sentiment score into 5 categories
+  switch(true)
+  {
+    case (sentimentResult < 0.2):
+      console.log("Very Negative");
+      break;
+    case (sentimentResult < 0.4):
+      console.log("Negative");
+      break;
+    case (sentimentResult < 0.6):
+      console.log("Neutral");
+      break;
+    case (sentimentResult < 0.8):
+      console.log("Positive");
+      break;
+    case (sentimentResult < 1):
+      console.log("Very Positive");
+      break;
+    default:
+        console.log("Neutral");
+        break;
+  }
 }
 
 
@@ -235,19 +330,43 @@ function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
 }
 
-//MOVE SCENES
-function moveScenes()
-{
-  console.log('moveScenes called');
-  clearTimeout(timer);
-  scene = scene + 1;
-  loop();
-}
-
 //INTERACTING TO TEST STUFF
 function keyPressed() 
 {
   if (keyCode === ENTER) {
     faceRead();
   }
+}
+
+//UI CODE
+let isFlipped = false;
+
+function flip() 
+{
+  const flipContainer = document.querySelector('.flip-container');
+  flipContainer.classList.toggle('flipped');
+  isFlipped = !isFlipped;
+}
+
+let number = 42;
+document.getElementById("number").textContent = number;
+
+// Accessing individual elements
+const genderOnScreen = document.getElementById("gender");
+const ageOnScreen = document.getElementById("age");
+const moodOnScreen = document.getElementById("mood");
+const locationOnScreen = document.getElementById("location");
+const humorOnScreen = document.getElementById("humor");
+
+// Example usage:
+genderOnScreen.textContent = "Gender: Female";
+ageOnScreen.textContent = "Age: 30";
+moodOnScreen.textContent = "Mood: Sad";
+locationOnScreen.textContent = "Location: Los Angeles";
+humorOnScreen.textContent = "Humor: Sarcastic";
+
+// Change background color with JavaScript
+function changeBackgroundColor(color) 
+{
+  document.body.style.backgroundColor = color;
 }
