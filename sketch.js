@@ -16,15 +16,24 @@ const mappa = new Mappa('Leaflet');
 var latd;
 var lng;
 
+//variables for canvas map drawing
+let overlayCanvas;
+let mapContainer;
+
 //variables for speech
 let speechRec;
 
 //variables for sentiment analysis
 let sentiment;
 let sentimentResult;
+let humor;
 
 //Storing data variables
 let NumbersOfYou = [];
+let todaysDate;
+
+//Timer variables
+let countdown;
 
 //**PRELOAD function
 function preload() 
@@ -36,6 +45,12 @@ function preload()
 
   //for geolocation
   locationData = getCurrentPosition();
+    if (!navigator.geolocation) {
+    // Geolocation is not available
+    // Handle the error here, e.g., display an error message
+    console.error("Geolocation is not available.");
+    return;
+  }
 
   //for sentiment analysis
   sentiment = ml5.sentiment('MovieReviews');
@@ -65,91 +80,22 @@ function setup()
 
 }
 
-
-// //**PRELOAD function
-// function preload() {
-//   // Load the face-api.js models
-//   faceapi.loadSsdMobilenetv1Model(model_url);
-//   faceapi.loadAgeGenderModel(model_url);
-//   faceapi.loadFaceExpressionModel(model_url);
-
-//   // for geolocation
-//   if (!navigator.geolocation) {
-//     // Geolocation is not available
-//     // Handle the error here, e.g., display an error message
-//     console.error("Geolocation is not available.");
-//     return;
-//   }
-
-//   // for sentiment analysis
-//   sentiment = ml5.sentiment('MovieReviews');
-// }
-
-// function setup() {
-//   // To do: check whether the date is a new date
-
-//   // // Loading the Numbers of You array
-//   // NumbersOfYou = getItem('NumbersOfYou');
-//   // console.log("loaded Numbers: " + NumbersOfYou.length);
-
-//   // Check camera access
-//   navigator.mediaDevices.getUserMedia({ video: true })
-//     .then(function (videoStream) {
-//       // Camera access granted
-
-//       // Check microphone access
-//       navigator.mediaDevices.getUserMedia({ audio: true })
-//         .then(function (audioStream) {
-//           // Microphone access granted
-
-//           // Video data capture
-//           capture = createCapture(VIDEO);
-//           capture.id("video_element");
-//           input = document.getElementById('video_element');
-//           capture.size(width, height);
-//           capture.hide();
-
-//           // Speech stuff
-//           speechRec = new p5.SpeechRec('en-US', gotSpeech);
-//           let continuous = true;
-//           let interim = false;
-//           speechRec.start(continuous, interim);
-
-//           // Let's start the thing
-//           introScene();
-//         })
-//         .catch(function (error) {
-//           // Microphone access denied or not available
-//           // Handle the error here, e.g., display an error message
-//           console.error("Microphone access denied or not available.");
-//         });
-//     })
-//     .catch(function (error) {
-//       // Camera access denied or not available
-//       // Handle the error here, e.g., display an error message
-//       console.error("Camera access denied or not available.");
-//     });
-// }
-
-// function draw() 
-// {
-  
-// }
-
 //FLOW CONTROL - SCENES
 
 function introScene()
 {
   console.log("introSceneCalled");
+  createCanvas(windowWidth, windowHeight);
   fill(255, 0, 0);
   background(255, 255, 255);
-  textSize(100);
+  textSize(60);
   textAlign(CENTER, CENTER);
-  text("Welcome to Number of You", windowWidth/2, windowHeight/2);
-  textSize(50);
-  text("please wait while we load the system", windowWidth/2, windowHeight/2 + 150);
-  timer = setTimeout(getBasicDataScene, 10000);
+  textSize(30);
+  text("please wait while we load the system", windowWidth/2, windowHeight/2 - 100);
+  
+  timer = setTimeout(getBasicDataScene, 2000);
 }
+
 
 function getBasicDataScene()
 {
@@ -157,12 +103,13 @@ function getBasicDataScene()
   noLoop();
   console.log(getDate());
   geolocationData();
-  timer = setTimeout(cameraScene, 4000);
+  timer = setTimeout(cameraScene, 3000);
 
 }
 
 function cameraScene()
 {
+  console.log("Camera Scene called");
   background(255, 255, 255);
   fill(255, 0, 0);
   textSize(50);
@@ -176,6 +123,11 @@ function cameraScene()
 function soundScene()
 {
   console.log("Speech Scene called");
+  background(255, 255, 255);
+  fill(255, 0, 0);
+  textSize(50);
+  textAlign(CENTER, CENTER);
+  text("Say something about yourself today", windowWidth/2, windowHeight/2 - 100);
   //speech stuff
   speechRec = new p5.SpeechRec('en-US', gotSpeech);
   let continuous = false;
@@ -191,7 +143,7 @@ function endScene()
   fill(255, 0, 0);
   textSize(100);
   textAlign(CENTER, CENTER);
-  text("52", windowWidth/2, windowHeight/2);
+  text("52", windowWidth/2, windowHeight/2 - 100);
 }
 
 
@@ -223,8 +175,9 @@ function geolocationData()
     style: "http://{s}.tile.osm.org/{z}/{x}/{y}.png"
   }
   textSize(50);
+  fill(255, 0, 0);
   textAlign(CENTER, CENTER);
-  text("Getting Date and Location", windowWidth/2, windowHeight/2);
+  text("Getting Date and Location", windowWidth/2, windowHeight/2 - 100);
   myMap = mappa.tileMap(options); 
   myMap.overlay(canvas);
   const userLocation = myMap.latLngToPixel(latd, lng);
@@ -250,6 +203,8 @@ function showFaceDetectionData(data)
   faceDrawings = data;
   console.log('age ' + faceDrawings[0].age);
   console.log('gender ' + faceDrawings[0].gender);
+  age = floor(faceDrawings[0].age);
+  gender = faceDrawings[0].gender;
   
   const copiedExpression = faceDrawings[0].expressions;
   let highestFloat = Number.MIN_SAFE_INTEGER; // Initialize with the lowest possible float value
@@ -264,6 +219,8 @@ function showFaceDetectionData(data)
     }
   }
   console.log('mood ' + highestString)
+  mood = highestString;
+  console.log(age + ' ' + gender + ' ' + mood);
 
 }
 
@@ -285,7 +242,7 @@ function speechReconEnded()
 {
   console.log("speechReconEnded called");
   getSentiment(speechRec.resultString);
-  setTimeout(endScene, 4000);
+  setTimeout(endScene, 2000);
 }
 
 // **SENTIMENT ANALYSIS
@@ -300,20 +257,21 @@ function getSentiment(result)
   // a switch statement that divides the sentiment score into 5 categories
   switch(true)
   {
-    case (sentimentResult < 0.2):
-      console.log("Very Negative");
+    case (sentimentResult < 0.3):
+      console.log("Choleric");
+      humor = "Choleric";
       break;
-    case (sentimentResult < 0.4):
-      console.log("Negative");
+    case (sentimentResult < 0.5):
+      console.log("Sanguine");
+      humor = "Sanguine";
       break;
-    case (sentimentResult < 0.6):
-      console.log("Neutral");
-      break;
-    case (sentimentResult < 0.8):
-      console.log("Positive");
+    case (sentimentResult < 0.7):
+      console.log("Melancholic");
+      humor = "Melancholic";
       break;
     case (sentimentResult < 1):
-      console.log("Very Positive");
+      console.log("Phlegmatic");
+      humor = "Phlegmatic";
       break;
     default:
         console.log("Neutral");
@@ -327,7 +285,10 @@ function getSentiment(result)
 //RESIZE THE WINDOW
 // when the browser window is resized
 function windowResized() {
+  clear();
   resizeCanvas(windowWidth, windowHeight);
+  background(255, 255, 255);
+  introScene();
 }
 
 //INTERACTING TO TEST STUFF
@@ -337,6 +298,7 @@ function keyPressed()
     faceRead();
   }
 }
+
 
 //UI CODE
 let isFlipped = false;
@@ -348,8 +310,8 @@ function flip()
   isFlipped = !isFlipped;
 }
 
-let number = 42;
-document.getElementById("number").textContent = number;
+// let number = 0 ;
+// document.getElementById("number").textContent = number;
 
 // Accessing individual elements
 const genderOnScreen = document.getElementById("gender");
