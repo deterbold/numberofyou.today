@@ -14,11 +14,9 @@ let myMap;
 let canvas;
 const mappa = new Mappa('Leaflet');
 var latd;
-var lng;
+var lngo;
+var currentPlace;
 
-//variables for canvas map drawing
-let overlayCanvas;
-let mapContainer;
 
 //variables for speech
 let speechRec;
@@ -28,12 +26,9 @@ let sentiment;
 let sentimentResult;
 let humor;
 
-//Storing data variables
-let NumbersOfYou = [];
-let todaysDate;
+//Number of You to save
+var numberOfYou; 
 
-//Timer variables
-let countdown;
 
 //**PRELOAD function
 function preload() 
@@ -51,10 +46,8 @@ function preload()
     console.error("Geolocation is not available.");
     return;
   }
-
   //for sentiment analysis
   sentiment = ml5.sentiment('MovieReviews');
-
 }
 
 function setup() 
@@ -66,7 +59,6 @@ function setup()
   // NumbersOfYou = getItem('NumbersOfYou');
   // console.log("loaded Numbers: " + NumbersOfYou.length);
 
-
   //video data capture
   capture = createCapture(VIDEO);
   capture.id("video_element");
@@ -74,10 +66,15 @@ function setup()
   capture.size(width, height);
   capture.hide();  
   
-  //let's start the thing
-  introScene();
 
-
+  if(isNewDay())
+  {
+    introScene();
+  }
+  else
+  {
+    todaysNumber();
+  }
 }
 
 //FLOW CONTROL - SCENES
@@ -85,7 +82,7 @@ function setup()
 function introScene()
 {
   console.log("introSceneCalled");
-  createCanvas(windowWidth, windowHeight);
+  canvas = createCanvas(windowWidth, windowHeight);
   fill(255, 0, 0);
   background(255, 255, 255);
   textSize(60);
@@ -93,7 +90,7 @@ function introScene()
   textSize(30);
   text("please wait while we load the system", windowWidth/2, windowHeight/2 - 100);
   
-  timer = setTimeout(getBasicDataScene, 2000);
+  timer = setTimeout(getBasicDataScene, 2800);
 }
 
 
@@ -101,7 +98,7 @@ function getBasicDataScene()
 {
   console.log("Basic Data Scene called");
   noLoop();
-  console.log(getDate());
+  saveCurrentDate();
   geolocationData();
   timer = setTimeout(cameraScene, 3000);
 
@@ -127,7 +124,7 @@ function soundScene()
   fill(255, 0, 0);
   textSize(50);
   textAlign(CENTER, CENTER);
-  text("Say something about yourself today", windowWidth/2, windowHeight/2 - 100);
+  text("Say something in English about yourself today", windowWidth/2, windowHeight/2 - 100);
   //speech stuff
   speechRec = new p5.SpeechRec('en-US', gotSpeech);
   let continuous = false;
@@ -139,11 +136,36 @@ function endScene()
 {
   console.log("endScene called");
   noLoop();
-  background(255);
+  numberOfYou = Math.floor(Math.random() * (0 - 255 + 1));
+  saveNumberOfYou(numberOfYou);
+  saveUserData();
+  background(generateRandomNumber(age), generateRandomNumber(age), generateRandomNumber(age));
   fill(255, 0, 0);
   textSize(100);
   textAlign(CENTER, CENTER);
-  text("52", windowWidth/2, windowHeight/2 - 100);
+  text(numberOfYou, windowWidth/2, windowHeight/2 - 100);
+}
+
+function todaysNumber()
+{
+  console.log("todaysNumber called");
+  canvas = createCanvas(windowWidth, windowHeight);
+  numberOfYou = localStorage.getItem('numberOfYou');
+  console.log("Number of You: " + numberOfYou);
+  loadUserData();
+  noLoop();
+  if(age)
+  {
+    background(generateRandomNumber(age), generateRandomNumber(age), generateRandomNumber(age));
+  }
+  else
+  {
+    background(Math.floor(Math.random() * 256), Math.floor(Math.random() * 256), Math.floor(Math.random() * 256));
+  }
+  fill(255, 0, 0);
+  textSize(100);
+  textAlign(CENTER, CENTER);
+  text(numberOfYou, windowWidth/2, windowHeight/2 - 100);
 }
 
 
@@ -162,15 +184,15 @@ function getDate()
 //GEOLOCATION FUNCTIONS
 function geolocationData()
 {
-  canvas = createCanvas(windowWidth, windowHeight);
   //geolocation
-  //clear();
+  clear();
   latd = locationData.latitude;
-  lng = locationData.longitude;
+  lngo = locationData.longitude;
+  console.log("lat: " + latd + " lng: " + lngo);
   const options = 
   {
     lat: latd,
-    lng: lng,
+    lng: lngo,
     zoom: 25,
     style: "http://{s}.tile.osm.org/{z}/{x}/{y}.png"
   }
@@ -178,11 +200,19 @@ function geolocationData()
   fill(255, 0, 0);
   textAlign(CENTER, CENTER);
   text("Getting Date and Location", windowWidth/2, windowHeight/2 - 100);
-  myMap = mappa.tileMap(options); 
+  myMap = mappa.tileMap(options);
   myMap.overlay(canvas);
-  const userLocation = myMap.latLngToPixel(latd, lng);
-  fill(255, 0, 0);
-  ellipse(userLocation.x, userLocation.y, 20, 20);
+  currentPlace = 255;
+
+  
+  // reverseGeocode(latd, lngo)
+  // .then(address => {
+  //   console.log("Reverse geocoding result:", address);
+  //   currentPlace = address;
+  // })
+  // .catch(error => {
+  //   console.error("Reverse geocoding error:", error);
+  // });
 }
 
 
@@ -279,8 +309,72 @@ function getSentiment(result)
   }
 }
 
+// **REVERSE GEOLOCATION**
+async function reverseGeocode(lat, lng) {
+  const apiUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`;
+
+  try {
+    const response = await fetch(apiUrl);
+    const data = await response.json();
+    const address = data.display_name;
+    return address;
+  } catch (error) {
+    console.error("Reverse geocoding error:", error);
+    return null;
+  }
+}
+
 
 // **UTILITIES**
+
+//Saving the NoY
+function saveNumberOfYou(numberOfYou) {
+  localStorage.setItem('numberOfYou', numberOfYou);
+}
+
+//deleting the NoY
+function deleteNumberOfYou() {
+  localStorage.removeItem('numberOfYou');
+}
+
+//generate a random number based on a seed
+function generateRandomNumber(seed) {
+  const hash = (value) => {
+    let x = Math.sin(value) * 10000;
+    return x - Math.floor(x);
+  };
+
+  const normalizedSeed = seed % 1; // Ensure seed is between 0 and 1
+  const randomFloat = hash(normalizedSeed);
+  const randomNumber = Math.floor(randomFloat * 256);
+
+  return randomNumber;
+}
+
+//Saving the User Data
+function saveUserData(age, gender, mood, currentPlace) {
+  localStorage.setItem('age', age);
+  localStorage.setItem('gender', gender);
+  localStorage.setItem('mood', mood);
+  localStorage.setItem('currentPlace', currentPlace);
+}
+
+//Loading the user data
+function loadUserData() {
+  const age = localStorage.getItem('age');
+  const gender = localStorage.getItem('gender');
+  const mood = localStorage.getItem('mood');
+  const currentPlace = localStorage.getItem('currentPlace');
+
+  return {
+    age,
+    gender,
+    mood,
+    currentPlace
+  };
+}
+
+
 
 //RESIZE THE WINDOW
 // when the browser window is resized
@@ -288,16 +382,27 @@ function windowResized() {
   clear();
   resizeCanvas(windowWidth, windowHeight);
   background(255, 255, 255);
-  introScene();
 }
 
-//INTERACTING TO TEST STUFF
-function keyPressed() 
-{
-  if (keyCode === ENTER) {
-    faceRead();
-  }
+//SAVING THE DAY
+function saveCurrentDate() {
+  const currentDate = new Date();
+  console.log("current date: ", currentDate);
+  const dateString = currentDate.toDateString();
+  localStorage.setItem('savedDate', dateString);
 }
+
+//CHECKING WHETHER IT'S A NEW DAY
+function isNewDay() {
+  const savedDate = localStorage.getItem('savedDate');
+  if (savedDate) {
+    const currentDate = new Date();
+    const currentDateString = currentDate.toDateString();
+    return currentDateString !== savedDate;
+  }
+  return true; // If no saved date exists, consider it a new day
+}
+
 
 
 //UI CODE
