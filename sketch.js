@@ -8,6 +8,7 @@ var gender;
 var age;
 var mood;
 
+
 //variables for geolocation
 var locationData;
 let myMap;
@@ -25,6 +26,12 @@ let speechRec;
 let sentiment;
 let sentimentResult;
 let humor;
+
+//UI Variables
+let flipped = false;
+var backgroundColor;
+let dataButton;
+
 
 //Number of You to save
 var numberOfYou; 
@@ -65,6 +72,15 @@ function setup()
   input = document.getElementById('video_element');
   capture.size(width, height);
   capture.hide();  
+
+  //UI Button
+  dataButton = createButton("Data");
+  dataButton.position(width / 2 - button.width / 2, height - 100);
+  dataButton.style("font-family", "Futura");
+  dataButton.mouseOver(changeButtonColor);
+  dataButton.mouseOut(changeButtonColor);
+  dataButton.mouseClicked(dataButtonClicked);
+  dataButton.hide();
   
 
   if(isNewDay())
@@ -137,13 +153,16 @@ function endScene()
   console.log("endScene called");
   noLoop();
   numberOfYou = Math.floor(Math.random() * (0 - 255 + 1));
+  backgroundColor = generateRandomNumber(age);
   saveNumberOfYou(numberOfYou);
   saveUserData();
-  background(generateRandomNumber(age), generateRandomNumber(age), generateRandomNumber(age));
-  fill(255, 0, 0);
-  textSize(100);
-  textAlign(CENTER, CENTER);
-  text(numberOfYou, windowWidth/2, windowHeight/2 - 100);
+  //background(generateRandomNumber(age), generateRandomNumber(age), generateRandomNumber(age));
+  // fill(255, 0, 0);
+  // textSize(100);
+  // textAlign(CENTER, CENTER);
+  // text(numberOfYou, windowWidth/2, windowHeight/2 - 100);
+  dataButton.show();
+  displayNoY(numberOfYou, backgroundColor);
 }
 
 function todaysNumber()
@@ -154,9 +173,9 @@ function todaysNumber()
   console.log("Number of You: " + numberOfYou);
   loadUserData();
   noLoop();
-  if(age)
+  if(backgroundColor)
   {
-    background(generateRandomNumber(age), generateRandomNumber(age), generateRandomNumber(age));
+    backgroundColor = generateRandomNumber(age);
   }
   else
   {
@@ -168,6 +187,58 @@ function todaysNumber()
   text(numberOfYou, windowWidth/2, windowHeight/2 - 100);
 }
 
+//**DISPLAY FUNCTIONS **//
+
+//function that displays the NoY
+function displayNoY(NoY, backgroundColor)
+{
+  console.log("displayNoY called");
+  clear();
+  background(backgroundColor, backgroundColor, backgroundColor);
+  fill(255, 0, 0);
+  textSize(100);
+  textAlign(CENTER, CENTER);
+  text(NoY, windowWidth/2, windowHeight/2 - 100);
+}
+
+//function that displays the user data
+function displayUserData(backgroundColor) 
+{
+  clear();
+  background(backgroundColor, backgroundColor, backgroundColor);
+  let data = [
+    `Age: ${age}`,
+    `Gender: ${gender}`,
+    `Mood: ${mood}`,
+    `Humor: ${humor}`,
+    `Location: ${currentPlace}`
+  ];
+  
+  fill(255, 0, 0);
+  textSize(24);
+  textAlign(CENTER, CENTER);
+  
+  let textY = height / 2 - 50;
+  for (let i = 0; i < data.length; i++) {
+    text(data[i], width / 2, textY);
+    textY += 40;
+  }
+}
+
+function dataButtonClicked() {
+  if (flipped) {
+    displayNoY(NoY, backgroundColor);
+    button.html("Number of You");
+  } else {
+    displayUserData(backgroundColor);
+    button.html("Data");
+  }
+  flipped = !flipped;
+}
+
+function changeButtonColor() {
+  button.style("background-color", flipped ? "#FF0000" : "#00FF00");
+}
 
 //GETTING THE DATE
 // NICKED FROM https://editor.p5js.org/bitSpaz/sketches/hiUY5zSr7
@@ -356,22 +427,27 @@ function saveUserData(age, gender, mood, currentPlace) {
   localStorage.setItem('age', age);
   localStorage.setItem('gender', gender);
   localStorage.setItem('mood', mood);
+  localStorage.setItem('humor', humor);  
   localStorage.setItem('currentPlace', currentPlace);
+  localStorage.setItem('backgroundColor', backgroundColor);
 }
 
 //Loading the user data
 function loadUserData() {
-  const age = localStorage.getItem('age');
-  const gender = localStorage.getItem('gender');
-  const mood = localStorage.getItem('mood');
-  const currentPlace = localStorage.getItem('currentPlace');
+  age = localStorage.getItem('age');
+  gender = localStorage.getItem('gender');
+  mood = localStorage.getItem('mood');
+  humor = localStorage.getItem('humor'); 
+  currentPlace = localStorage.getItem('currentPlace');
+  backgroundColor = localStorage.getItem('backgroundColor');
 
-  return {
-    age,
-    gender,
-    mood,
-    currentPlace
-  };
+  // return {
+  //   age,
+  //   gender,
+  //   mood,
+  //   humor,
+  //   currentPlace
+  // };
 }
 
 
@@ -405,35 +481,35 @@ function isNewDay() {
 
 
 
-//UI CODE
-let isFlipped = false;
+// //UI CODE
+// let isFlipped = false;
 
-function flip() 
-{
-  const flipContainer = document.querySelector('.flip-container');
-  flipContainer.classList.toggle('flipped');
-  isFlipped = !isFlipped;
-}
+// function flip() 
+// {
+//   const flipContainer = document.querySelector('.flip-container');
+//   flipContainer.classList.toggle('flipped');
+//   isFlipped = !isFlipped;
+// }
 
-// let number = 0 ;
-// document.getElementById("number").textContent = number;
+// // let number = 0 ;
+// // document.getElementById("number").textContent = number;
 
-// Accessing individual elements
-const genderOnScreen = document.getElementById("gender");
-const ageOnScreen = document.getElementById("age");
-const moodOnScreen = document.getElementById("mood");
-const locationOnScreen = document.getElementById("location");
-const humorOnScreen = document.getElementById("humor");
+// // Accessing individual elements
+// const genderOnScreen = document.getElementById("gender");
+// const ageOnScreen = document.getElementById("age");
+// const moodOnScreen = document.getElementById("mood");
+// const locationOnScreen = document.getElementById("location");
+// const humorOnScreen = document.getElementById("humor");
 
-// Example usage:
-genderOnScreen.textContent = "Gender: Female";
-ageOnScreen.textContent = "Age: 30";
-moodOnScreen.textContent = "Mood: Sad";
-locationOnScreen.textContent = "Location: Los Angeles";
-humorOnScreen.textContent = "Humor: Sarcastic";
+// // Example usage:
+// genderOnScreen.textContent = "Gender: Female";
+// ageOnScreen.textContent = "Age: 30";
+// moodOnScreen.textContent = "Mood: Sad";
+// locationOnScreen.textContent = "Location: Los Angeles";
+// humorOnScreen.textContent = "Humor: Sarcastic";
 
-// Change background color with JavaScript
-function changeBackgroundColor(color) 
-{
-  document.body.style.backgroundColor = color;
-}
+// // Change background color with JavaScript
+// function changeBackgroundColor(color) 
+// {
+//   document.body.style.backgroundColor = color;
+// }

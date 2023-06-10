@@ -1,6 +1,62 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
+  <title>Number of You</title>
+  <style>
+    body {
+      background-color: #FFFFFF;
+      position: relative;
+    }
+    h1 {
+      font-family: Futura, sans-serif;
+      font-weight: bold;
+      font-size: 48px;
+      text-align: center;
+      margin-top: 100px;
+    }
+    p {
+      font-family: Futura, sans-serif;
+      font-size: 24px;
+      text-align: center;
+      margin-top: 50px;
+    }
+    .link {
+      position: fixed;
+      bottom: 10px;
+      padding: 5px 10px;
+      font-family: Futura, sans-serif;
+      font-size: 16px;
+      text-decoration: none;
+      color: #000000;
+    }
+    .link.about {
+      right: 10px;
+    }
+    .link.privacy {
+      left: 10px;
+    }
+  </style>
+  <script src="libraries/p5.min.js"></script>
+  <script src="libraries/p5.sound.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js/dist/face-api.min.js"></script>
+  <script src="libraries/ml5.min.js"></script>
+  <script src="libraries/p5.geolocation.js"></script>
+  <script src="libraries/mappa.js"></script>
+  <script src="libraries/p5.speech.js"></script>
+</head>
+<body>
+  <h1>Number of You: Today</h1>
+  <p id="number"></p>
+  <a class="link about" href="https://ridiculous.software/numberofyou" target="_blank">About</a>
+  <a class="link privacy" href="https://stupid.technology/numberofyou" target="_blank">Privacy and Data</a>
+  <script src="sketch.js"></script>
+</body>
+</html>
+
+<!-- <!DOCTYPE html>
+<html>
+<head>
 	<meta charset="UTF-8">
 	<title>Number of You</title>
 	<style>
@@ -34,7 +90,7 @@
 	<p id="number"></p>
   <script src="sketch.js"></script>
 </body>
-</html>
+</html> -->
 <!-- <!DOCTYPE html>
 <html>
 <head>
