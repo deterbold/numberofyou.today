@@ -1,3 +1,5 @@
+//**VARIABLES
+
 //Variables for Face API
 const model_url = '/models';
 let faceDrawings = [];
@@ -36,6 +38,14 @@ let dataButton;
 //Number of You to save
 var numberOfYou; 
 
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+
+
 
 //**PRELOAD function
 function preload() 
@@ -59,13 +69,6 @@ function preload()
 
 function setup() 
 {
-
-  //To do: check whether the date is a new date
-  
-  // //loading the Numbers of You array
-  // NumbersOfYou = getItem('NumbersOfYou');
-  // console.log("loaded Numbers: " + NumbersOfYou.length);
-
   //video data capture
   capture = createCapture(VIDEO);
   capture.id("video_element");
@@ -82,28 +85,47 @@ function setup()
   dataButton.mouseClicked(dataButtonClicked);
   dataButton.hide();
   
+  //Checking if it is a new day
+  //Uncomment this for deployment
+  // if(isNewDay())
+  // {
+  //   deleteUserData();
+  //   deleteNumberOfYou();
+  //   deleteCurrentDate();
+  //   introScene();
+  // }
+  // else
+  // {
+  //   todaysNumber();
+  // }
 
-  if(isNewDay())
-  {
-    introScene();
-  }
-  else
-  {
-    todaysNumber();
-  }
+  //For debugging: starting the program from the beginning
+  introScene();
 }
+
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
 
 //FLOW CONTROL - SCENES
 
 function introScene()
 {
+  //debugging
   console.log("introSceneCalled");
+
   canvas = createCanvas(windowWidth, windowHeight);
-  fill(255, 0, 0);
+  
   background(255, 255, 255);
+
+  fill(255, 0, 0);
   textSize(60);
   textAlign(CENTER, CENTER);
   textSize(30);
+  
   text("please wait while we load the system", windowWidth/2, windowHeight/2 - 100);
   
   timer = setTimeout(getBasicDataScene, 2800);
@@ -112,35 +134,45 @@ function introScene()
 
 function getBasicDataScene()
 {
+  //debugging
   console.log("Basic Data Scene called");
-  noLoop();
+  
   saveCurrentDate();
   geolocationData();
+  
   timer = setTimeout(cameraScene, 3000);
 
 }
 
 function cameraScene()
 {
+  //debugging
   console.log("Camera Scene called");
+
   background(255, 255, 255);
+  
   fill(255, 0, 0);
   textSize(50);
   textAlign(CENTER, CENTER);
   text("Getting Image Data", windowWidth/2, windowHeight/2 + 100);
   image(capture, 0, 0, width, height/2, 0, 0, 0, 0, CONTAIN); 
+  
   faceRead();
+  
   timer = setTimeout(soundScene, 5000);
 }
 
 function soundScene()
 {
+  //debugging
   console.log("Speech Scene called");
+
   background(255, 255, 255);
   fill(255, 0, 0);
   textSize(50);
   textAlign(CENTER, CENTER);
   text("Say something in English about yourself today", windowWidth/2, windowHeight/2 - 100);
+  
   //speech stuff
   speechRec = new p5.SpeechRec('en-US', gotSpeech);
   let continuous = false;
@@ -150,12 +182,15 @@ function soundScene()
 
 function endScene()
 {
+  //debugging
   console.log("endScene called");
-  noLoop();
+
   numberOfYou = Math.floor(Math.random() * (0 - 255 + 1));
   backgroundColor = generateRandomNumber(age);
+  
   saveNumberOfYou(numberOfYou);
   saveUserData();
+  
   //background(generateRandomNumber(age), generateRandomNumber(age), generateRandomNumber(age));
   // fill(255, 0, 0);
   // textSize(100);
@@ -167,12 +202,16 @@ function endScene()
 
 function todaysNumber()
 {
+  //debugging
   console.log("todaysNumber called");
+
+  loadUserData();
+
   canvas = createCanvas(windowWidth, windowHeight);
   numberOfYou = localStorage.getItem('numberOfYou');
+  //debugging
   console.log("Number of You: " + numberOfYou);
-  loadUserData();
-  noLoop();
+  
   if(backgroundColor)
   {
     backgroundColor = generateRandomNumber(age);
@@ -181,18 +220,27 @@ function todaysNumber()
   {
     background(Math.floor(Math.random() * 256), Math.floor(Math.random() * 256), Math.floor(Math.random() * 256));
   }
-  fill(255, 0, 0);
-  textSize(100);
-  textAlign(CENTER, CENTER);
-  text(numberOfYou, windowWidth/2, windowHeight/2 - 100);
+
+  displayNoY(numberOfYou, backgroundColor);
 }
+
+
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+
 
 //**DISPLAY FUNCTIONS **//
 
 //function that displays the NoY
 function displayNoY(NoY, backgroundColor)
 {
+  //debugging
   console.log("displayNoY called");
+
   clear();
   background(backgroundColor, backgroundColor, backgroundColor);
   fill(255, 0, 0);
@@ -225,7 +273,8 @@ function displayUserData(backgroundColor)
   }
 }
 
-function dataButtonClicked() {
+function dataButtonClicked() 
+{
   if (flipped) {
     displayNoY(NoY, backgroundColor);
     button.html("Number of You");
@@ -236,9 +285,14 @@ function dataButtonClicked() {
   flipped = !flipped;
 }
 
-function changeButtonColor() {
-  button.style("background-color", flipped ? "#FF0000" : "#00FF00");
-}
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+
+//**DATA FUNCTIONS**//
 
 //GETTING THE DATE
 // NICKED FROM https://editor.p5js.org/bitSpaz/sketches/hiUY5zSr7
@@ -395,18 +449,16 @@ async function reverseGeocode(lat, lng) {
   }
 }
 
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+
 
 // **UTILITIES**
 
-//Saving the NoY
-function saveNumberOfYou(numberOfYou) {
-  localStorage.setItem('numberOfYou', numberOfYou);
-}
-
-//deleting the NoY
-function deleteNumberOfYou() {
-  localStorage.removeItem('numberOfYou');
-}
 
 //generate a random number based on a seed
 function generateRandomNumber(seed) {
@@ -421,6 +473,27 @@ function generateRandomNumber(seed) {
 
   return randomNumber;
 }
+
+//CHECKING WHETHER IT'S A NEW DAY
+function isNewDay() {
+  const savedDate = localStorage.getItem('savedDate');
+  if (savedDate) {
+    const currentDate = new Date();
+    const currentDateString = currentDate.toDateString();
+    return currentDateString !== savedDate;
+  }
+  return true; // If no saved date exists, consider it a new day
+}
+
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+
+// **SAVING AND LOADING AND DELETING**
+
 
 //Saving the User Data
 function saveUserData(age, gender, mood, currentPlace) {
@@ -450,14 +523,23 @@ function loadUserData() {
   // };
 }
 
+function deleteUserData() {
+  localStorage.removeItem('age');
+  localStorage.removeItem('gender');
+  localStorage.removeItem('mood');
+  localStorage.removeItem('humor');  
+  localStorage.removeItem('currentPlace');
+  localStorage.removeItem('backgroundColor'); 
+}
 
+//Saving the NoY
+function saveNumberOfYou(numberOfYou) {
+  localStorage.setItem('numberOfYou', numberOfYou);
+}
 
-//RESIZE THE WINDOW
-// when the browser window is resized
-function windowResized() {
-  clear();
-  resizeCanvas(windowWidth, windowHeight);
-  background(255, 255, 255);
+//deleting the NoY
+function deleteNumberOfYou() {
+  localStorage.removeItem('numberOfYou');
 }
 
 //SAVING THE DAY
@@ -468,16 +550,35 @@ function saveCurrentDate() {
   localStorage.setItem('savedDate', dateString);
 }
 
-//CHECKING WHETHER IT'S A NEW DAY
-function isNewDay() {
-  const savedDate = localStorage.getItem('savedDate');
-  if (savedDate) {
-    const currentDate = new Date();
-    const currentDateString = currentDate.toDateString();
-    return currentDateString !== savedDate;
-  }
-  return true; // If no saved date exists, consider it a new day
+function deleteCurrentDate() {
+  localStorage.removeItem('savedDate');
 }
+
+
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+
+// **USER INTERFACE**
+
+function changeButtonColor() {
+  button.style("background-color", flipped ? "#FF0000" : "#00FF00");
+}
+
+
+//RESIZE THE WINDOW
+// when the browser window is resized
+function windowResized() {
+  clear();
+  resizeCanvas(windowWidth, windowHeight);
+  background(255, 255, 255);
+}
+
+
+
 
 
 
