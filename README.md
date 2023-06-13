@@ -10,7 +10,7 @@ I would add a TODO list, but that would be a lot.
 
 ## Maintainers
 
-[@@deterbold](https://github.com/@deterbold)
+[@deterbold](https://github.com/@deterbold)
 
 
 ## License
