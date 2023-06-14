@@ -13,8 +13,8 @@ var mood;
 
 //variables for geolocation
 var locationData;
-let myMap;
-let canvas;
+var myMap;
+var canvas;
 const mappa = new Mappa('Leaflet');
 var latd;
 var lngo;
@@ -32,7 +32,7 @@ let humor;
 //UI Variables
 let flipped = false;
 var backgroundColor;
-let dataButton;
+var dataButton;
 
 
 //Number of You to save
@@ -55,17 +55,17 @@ function preload()
   faceapi.loadAgeGenderModel(model_url);
   faceapi.loadFaceExpressionModel(model_url);
 
-  //for geolocation
-  locationData = getCurrentPosition();
-    if (!navigator.geolocation) {
-    // Geolocation is not available
-    // Handle the error here, e.g., display an error message
-    console.error("Geolocation is not available.");
-    return;
-  }
+ 
   //for sentiment analysis
   sentiment = ml5.sentiment('MovieReviews');
 }
+
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
 
 function setup() 
 {
@@ -73,18 +73,34 @@ function setup()
   capture = createCapture(VIDEO);
   capture.id("video_element");
   input = document.getElementById('video_element');
+
+  // Check if video capture is available
+  if (!capture || !input) {
+    console.error('Error creating video capture');
+    // Handle the error case
+    return;
+  }
   capture.size(width, height);
   capture.hide();  
 
   //UI Button
   dataButton = createButton("Data");
-  dataButton.position(width / 2 - button.width / 2, height - 100);
+  dataButton.position(width / 2 - dataButton.width / 2, height - 100);
   dataButton.style("font-family", "Futura");
   dataButton.mouseOver(changeButtonColor);
   dataButton.mouseOut(changeButtonColor);
   dataButton.mouseClicked(dataButtonClicked);
   dataButton.hide();
-  
+
+  //Geolocation
+   if (!navigator.geolocation) 
+   {
+     // Geolocation is not available
+     // Handle the error here, e.g., display an error message
+     console.error("Geolocation is not available.");
+     alert("Geolocation is not available.");
+   }
+
   //Checking if it is a new day
   //Uncomment this for deployment
   // if(isNewDay())
@@ -136,12 +152,26 @@ function getBasicDataScene()
 {
   //debugging
   console.log("Basic Data Scene called");
+  clear();
+  textSize(50);
+  fill(255, 0, 0);
+  textAlign(CENTER, CENTER);
+  text("Getting Date and Location", windowWidth/2, windowHeight/2 - 100);
   
   saveCurrentDate();
-  geolocationData();
-  
-  timer = setTimeout(cameraScene, 3000);
 
+  function getCurrentPosition() {
+  
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject);
+    });
+  }
+  getCurrentPosition()
+  .then(position => geolocationData(position))
+  .catch(error => {
+    console.error("Error getting geolocation:", error);
+  });
+  
 }
 
 function cameraScene()
@@ -159,7 +189,7 @@ function cameraScene()
   
   faceRead();
   
-  timer = setTimeout(soundScene, 5000);
+  timer = setTimeout(soundScene, 4000);
 }
 
 function soundScene()
@@ -196,7 +226,9 @@ function endScene()
   // textSize(100);
   // textAlign(CENTER, CENTER);
   // text(numberOfYou, windowWidth/2, windowHeight/2 - 100);
+  
   dataButton.show();
+  
   displayNoY(numberOfYou, backgroundColor);
 }
 
@@ -307,13 +339,16 @@ function getDate()
 }
 
 //GEOLOCATION FUNCTIONS
-function geolocationData()
+function geolocationData(position) 
 {
-  //geolocation
-  clear();
-  latd = locationData.latitude;
-  lngo = locationData.longitude;
-  console.log("lat: " + latd + " lng: " + lngo);
+  // Process the geolocation data here
+  
+  latd = position.coords.latitude;
+  lngo = position.coords.longitude;
+  if(latd && lngo) 
+  {
+    console.log("lat: " + latd + " lng: " + lngo);
+  } 
   const options = 
   {
     lat: latd,
@@ -321,25 +356,21 @@ function geolocationData()
     zoom: 25,
     style: "http://{s}.tile.osm.org/{z}/{x}/{y}.png"
   }
-  textSize(50);
-  fill(255, 0, 0);
-  textAlign(CENTER, CENTER);
-  text("Getting Date and Location", windowWidth/2, windowHeight/2 - 100);
+  
   myMap = mappa.tileMap(options);
   myMap.overlay(canvas);
-  currentPlace = 255;
 
-  
-  // reverseGeocode(latd, lngo)
-  // .then(address => {
-  //   console.log("Reverse geocoding result:", address);
-  //   currentPlace = address;
-  // })
-  // .catch(error => {
-  //   console.error("Reverse geocoding error:", error);
-  // });
+  reverseGeocode(latd, lngo)
+  .then(address => {
+    console.log("Reverse geocoding result:", address);
+    currentPlace = address;
+  })
+  .catch(error => {
+    console.error("Reverse geocoding error:", error);
+  });
+
+  setTimeout(cameraScene, 500);
 }
-
 
 
 // **FACE DETECTION
