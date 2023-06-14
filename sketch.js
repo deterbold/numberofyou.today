@@ -215,17 +215,14 @@ function endScene()
   //debugging
   console.log("endScene called");
 
-  numberOfYou = Math.floor(Math.random() * (0 - 255 + 1));
-  backgroundColor = generateRandomNumber(age);
+  //numberOfYou = Math.floor(Math.random() * (0 - 255 + 1));
+  numberOfYou = generateRandomNumber(age);
+  console.log("Number of You: " + numberOfYou);
+  backgroundColor = numberOfYou;
+  
   
   saveNumberOfYou(numberOfYou);
   saveUserData();
-  
-  //background(generateRandomNumber(age), generateRandomNumber(age), generateRandomNumber(age));
-  // fill(255, 0, 0);
-  // textSize(100);
-  // textAlign(CENTER, CENTER);
-  // text(numberOfYou, windowWidth/2, windowHeight/2 - 100);
   
   dataButton.show();
   
@@ -243,15 +240,6 @@ function todaysNumber()
   numberOfYou = localStorage.getItem('numberOfYou');
   //debugging
   console.log("Number of You: " + numberOfYou);
-  
-  if(backgroundColor)
-  {
-    backgroundColor = generateRandomNumber(age);
-  }
-  else
-  {
-    background(Math.floor(Math.random() * 256), Math.floor(Math.random() * 256), Math.floor(Math.random() * 256));
-  }
 
   displayNoY(numberOfYou, backgroundColor);
 }
@@ -300,7 +288,7 @@ function displayUserData(backgroundColor)
   
   let textY = height / 2 - 50;
   for (let i = 0; i < data.length; i++) {
-    text(data[i], width / 2, textY);
+    text(data[i], width / 2, textY, 0, 500);
     textY += 40;
   }
 }
@@ -308,11 +296,11 @@ function displayUserData(backgroundColor)
 function dataButtonClicked() 
 {
   if (flipped) {
-    displayNoY(NoY, backgroundColor);
-    button.html("Number of You");
+    displayNoY(numberOfYou, backgroundColor);
+    dataButton.html("Number of You");
   } else {
     displayUserData(backgroundColor);
-    button.html("Data");
+    dataButton.html("Data");
   }
   flipped = !flipped;
 }
@@ -493,17 +481,10 @@ async function reverseGeocode(lat, lng) {
 
 //generate a random number based on a seed
 function generateRandomNumber(seed) {
-  const hash = (value) => {
-    let x = Math.sin(value) * 10000;
-    return x - Math.floor(x);
-  };
-
-  const normalizedSeed = seed % 1; // Ensure seed is between 0 and 1
-  const randomFloat = hash(normalizedSeed);
-  const randomNumber = Math.floor(randomFloat * 256);
-
-  return randomNumber;
+  const random = Math.sin(seed) * 10000;
+  return Math.floor((random - Math.floor(random)) * 256);
 }
+
 
 //CHECKING WHETHER IT'S A NEW DAY
 function isNewDay() {
@@ -596,7 +577,7 @@ function deleteCurrentDate() {
 // **USER INTERFACE**
 
 function changeButtonColor() {
-  button.style("background-color", flipped ? "#FF0000" : "#00FF00");
+  dataButton.style("background-color", flipped ? "#FF0000" : "#00FF00");
 }
 
 
