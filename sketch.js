@@ -85,8 +85,10 @@ function setup()
 
   //UI Button
   dataButton = createButton("Data");
-  dataButton.position(width / 2 - dataButton.width / 2, height - 100);
+  dataButton.size(100, 50);
+  dataButton.position(windowWidth/2 - dataButton.width/2, height - dataButton.height);
   dataButton.style("font-family", "Futura");
+  dataButton.style("font-size", "32px");
   dataButton.mouseOver(changeButtonColor);
   dataButton.mouseOut(changeButtonColor);
   dataButton.mouseClicked(dataButtonClicked);
@@ -284,12 +286,12 @@ function displayUserData(backgroundColor)
   
   fill(255, 0, 0);
   textSize(24);
-  textAlign(CENTER, CENTER);
+  textAlign(LEFT, CENTER);
   
-  let textY = height / 2 - 50;
+  let textY = height / 2 - 400;
   for (let i = 0; i < data.length; i++) {
-    text(data[i], width / 2, textY, 0, 500);
-    textY += 40;
+    text(data[i], width / 2 - 400, textY, width/2, height/2);
+    textY += 80;
   }
 }
 
@@ -357,7 +359,7 @@ function geolocationData(position)
     console.error("Reverse geocoding error:", error);
   });
 
-  setTimeout(cameraScene, 500);
+  setTimeout(cameraScene, 1000);
 }
 
 
