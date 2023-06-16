@@ -84,9 +84,9 @@ function setup()
   capture.hide();  
 
   //UI Button
-  dataButton = createButton("Data");
-  dataButton.size(100, 50);
-  dataButton.position(windowWidth/2 - dataButton.width/2, height - dataButton.height);
+  dataButton = createButton("data");
+  dataButton.size(150, 50);
+  dataButton.position(windowWidth/2 - dataButton.width/2, height - dataButton.height + 20);
   dataButton.style("font-family", "Futura");
   dataButton.style("font-size", "32px");
   dataButton.mouseOver(changeButtonColor);
@@ -145,6 +145,7 @@ function introScene()
   textSize(30);
   
   text("please wait while we load the system", windowWidth/2, windowHeight/2 - 100);
+  text("give access permission for camera and sound", windowWidth/2, windowHeight/2 - 50);
   
   timer = setTimeout(getBasicDataScene, 2800);
 }
@@ -210,6 +211,8 @@ function soundScene()
   let continuous = false;
   let interim = false;
   speechRec.start(continuous, interim);
+
+  setTimeout(endScene, 15000);
 }
 
 function endScene()
@@ -264,8 +267,17 @@ function displayNoY(NoY, backgroundColor)
   console.log("displayNoY called");
 
   clear();
-  background(backgroundColor, backgroundColor, backgroundColor);
-  fill(255, 0, 0);
+  let r = backgroundColor;
+  let g = backgroundColor;
+  let b = backgroundColor;
+  background(r, g, b);
+
+  // Determine the contrasting text color
+  let textBrightness = (r + g + b) / 3;
+  let textColor = (textBrightness < 128) ? 255 : 0;
+  // Set the fill color for the text
+  fill(textColor);
+  
   textSize(100);
   textAlign(CENTER, CENTER);
   text(NoY, windowWidth/2, windowHeight/2 - 100);
@@ -275,7 +287,11 @@ function displayNoY(NoY, backgroundColor)
 function displayUserData(backgroundColor) 
 {
   clear();
-  background(backgroundColor, backgroundColor, backgroundColor);
+  let r = backgroundColor;
+  let g = backgroundColor;
+  let b = backgroundColor;
+  background(r, g, b);
+  
   let data = [
     `Age: ${age}`,
     `Gender: ${gender}`,
@@ -284,13 +300,18 @@ function displayUserData(backgroundColor)
     `Location: ${currentPlace}`
   ];
   
-  fill(255, 0, 0);
+  // Determine the contrasting text color
+  let textBrightness = (r + g + b) / 3;
+  let textColor = (textBrightness < 128) ? 255 : 0;
+  // Set the fill color for the text
+  fill(textColor);
+
   textSize(24);
   textAlign(LEFT, CENTER);
   
   let textY = height / 2 - 400;
   for (let i = 0; i < data.length; i++) {
-    text(data[i], width / 2 - 400, textY, width/2, height/2);
+    text(data[i], width / 2 - 100, textY, width/2, height/2 - 200);
     textY += 80;
   }
 }
@@ -299,10 +320,10 @@ function dataButtonClicked()
 {
   if (flipped) {
     displayNoY(numberOfYou, backgroundColor);
-    dataButton.html("Number of You");
+    dataButton.html("number");
   } else {
     displayUserData(backgroundColor);
-    dataButton.html("Data");
+    dataButton.html("data");
   }
   flipped = !flipped;
 }
@@ -590,41 +611,3 @@ function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
   background(255, 255, 255);
 }
-
-
-
-
-
-
-// //UI CODE
-// let isFlipped = false;
-
-// function flip() 
-// {
-//   const flipContainer = document.querySelector('.flip-container');
-//   flipContainer.classList.toggle('flipped');
-//   isFlipped = !isFlipped;
-// }
-
-// // let number = 0 ;
-// // document.getElementById("number").textContent = number;
-
-// // Accessing individual elements
-// const genderOnScreen = document.getElementById("gender");
-// const ageOnScreen = document.getElementById("age");
-// const moodOnScreen = document.getElementById("mood");
-// const locationOnScreen = document.getElementById("location");
-// const humorOnScreen = document.getElementById("humor");
-
-// // Example usage:
-// genderOnScreen.textContent = "Gender: Female";
-// ageOnScreen.textContent = "Age: 30";
-// moodOnScreen.textContent = "Mood: Sad";
-// locationOnScreen.textContent = "Location: Los Angeles";
-// humorOnScreen.textContent = "Humor: Sarcastic";
-
-// // Change background color with JavaScript
-// function changeBackgroundColor(color) 
-// {
-//   document.body.style.backgroundColor = color;
-// }
