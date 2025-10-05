@@ -1,3 +1,5 @@
+//**VARIABLES
+
 //Variables for Face API
 const model_url = '/models';
 let faceDrawings = [];
@@ -11,8 +13,8 @@ var mood;
 
 //variables for geolocation
 var locationData;
-let myMap;
-let canvas;
+var myMap;
+var canvas;
 const mappa = new Mappa('Leaflet');
 var latd;
 var lngo;
@@ -30,11 +32,19 @@ let humor;
 //UI Variables
 let flipped = false;
 var backgroundColor;
-let dataButton;
+var dataButton;
 
 
 //Number of You to save
 var numberOfYou; 
+
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+
 
 
 //**PRELOAD function
@@ -45,66 +55,97 @@ function preload()
   faceapi.loadAgeGenderModel(model_url);
   faceapi.loadFaceExpressionModel(model_url);
 
-  //for geolocation
-  locationData = getCurrentPosition();
-    if (!navigator.geolocation) {
-    // Geolocation is not available
-    // Handle the error here, e.g., display an error message
-    console.error("Geolocation is not available.");
-    return;
-  }
+ 
   //for sentiment analysis
   sentiment = ml5.sentiment('MovieReviews');
 }
 
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+
 function setup() 
 {
-
-  //To do: check whether the date is a new date
-  
-  // //loading the Numbers of You array
-  // NumbersOfYou = getItem('NumbersOfYou');
-  // console.log("loaded Numbers: " + NumbersOfYou.length);
-
   //video data capture
   capture = createCapture(VIDEO);
   capture.id("video_element");
   input = document.getElementById('video_element');
+
+  // Check if video capture is available
+  if (!capture || !input) {
+    console.error('Error creating video capture');
+    // Handle the error case
+    return;
+  }
   capture.size(width, height);
   capture.hide();  
 
   //UI Button
-  dataButton = createButton("Data");
-  dataButton.position(width / 2 - button.width / 2, height - 100);
+  dataButton = createButton("data");
+  dataButton.size(150, 50);
+  dataButton.position(windowWidth/2 - dataButton.width/2, height - dataButton.height + 20);
   dataButton.style("font-family", "Futura");
+  dataButton.style("font-size", "32px");
   dataButton.mouseOver(changeButtonColor);
   dataButton.mouseOut(changeButtonColor);
   dataButton.mouseClicked(dataButtonClicked);
   dataButton.hide();
-  
 
-  if(isNewDay())
-  {
-    introScene();
-  }
-  else
-  {
-    todaysNumber();
-  }
+  //Geolocation
+   if (!navigator.geolocation) 
+   {
+     // Geolocation is not available
+     // Handle the error here, e.g., display an error message
+     console.error("Geolocation is not available.");
+     alert("Geolocation is not available.");
+   }
+
+  //Checking if it is a new day
+  //Uncomment this for deployment
+  // if(isNewDay())
+  // {
+  //   deleteUserData();
+  //   deleteNumberOfYou();
+  //   deleteCurrentDate();
+  //   introScene();
+  // }
+  // else
+  // {
+  //   todaysNumber();
+  // }
+
+  //For debugging: starting the program from the beginning
+  introScene();
 }
+
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
 
 //FLOW CONTROL - SCENES
 
 function introScene()
 {
+  //debugging
   console.log("introSceneCalled");
+
   canvas = createCanvas(windowWidth, windowHeight);
-  fill(255, 0, 0);
+  
   background(255, 255, 255);
+
+  fill(255, 0, 0);
   textSize(60);
   textAlign(CENTER, CENTER);
   textSize(30);
+  
   text("please wait while we load the system", windowWidth/2, windowHeight/2 - 100);
+  text("give access permission for camera and sound", windowWidth/2, windowHeight/2 - 50);
   
   timer = setTimeout(getBasicDataScene, 2800);
 }
@@ -112,90 +153,131 @@ function introScene()
 
 function getBasicDataScene()
 {
+  //debugging
   console.log("Basic Data Scene called");
-  noLoop();
+  clear();
+  textSize(50);
+  fill(255, 0, 0);
+  textAlign(CENTER, CENTER);
+  text("Getting Date and Location", windowWidth/2, windowHeight/2 - 100);
+  
   saveCurrentDate();
-  geolocationData();
-  timer = setTimeout(cameraScene, 3000);
 
+  function getCurrentPosition() {
+  
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject);
+    });
+  }
+  getCurrentPosition()
+  .then(position => geolocationData(position))
+  .catch(error => {
+    console.error("Error getting geolocation:", error);
+  });
+  
 }
 
 function cameraScene()
 {
+  //debugging
   console.log("Camera Scene called");
+
   background(255, 255, 255);
+  
   fill(255, 0, 0);
   textSize(50);
   textAlign(CENTER, CENTER);
   text("Getting Image Data", windowWidth/2, windowHeight/2 + 100);
   image(capture, 0, 0, width, height/2, 0, 0, 0, 0, CONTAIN); 
+  
   faceRead();
-  timer = setTimeout(soundScene, 5000);
+  
+  timer = setTimeout(soundScene, 4000);
 }
 
 function soundScene()
 {
+  //debugging
   console.log("Speech Scene called");
+
   background(255, 255, 255);
   fill(255, 0, 0);
   textSize(50);
   textAlign(CENTER, CENTER);
   text("Say something in English about yourself today", windowWidth/2, windowHeight/2 - 100);
+  
   //speech stuff
   speechRec = new p5.SpeechRec('en-US', gotSpeech);
   let continuous = false;
   let interim = false;
   speechRec.start(continuous, interim);
+
+  setTimeout(endScene, 15000);
 }
 
 function endScene()
 {
+  //debugging
   console.log("endScene called");
-  noLoop();
-  numberOfYou = Math.floor(Math.random() * (0 - 255 + 1));
-  backgroundColor = generateRandomNumber(age);
+
+  //numberOfYou = Math.floor(Math.random() * (0 - 255 + 1));
+  numberOfYou = generateRandomNumber(age);
+  console.log("Number of You: " + numberOfYou);
+  backgroundColor = numberOfYou;
+  
+  
   saveNumberOfYou(numberOfYou);
   saveUserData();
-  //background(generateRandomNumber(age), generateRandomNumber(age), generateRandomNumber(age));
-  // fill(255, 0, 0);
-  // textSize(100);
-  // textAlign(CENTER, CENTER);
-  // text(numberOfYou, windowWidth/2, windowHeight/2 - 100);
+  
   dataButton.show();
+  
   displayNoY(numberOfYou, backgroundColor);
 }
 
 function todaysNumber()
 {
+  //debugging
   console.log("todaysNumber called");
+
+  loadUserData();
+
   canvas = createCanvas(windowWidth, windowHeight);
   numberOfYou = localStorage.getItem('numberOfYou');
+  //debugging
   console.log("Number of You: " + numberOfYou);
-  loadUserData();
-  noLoop();
-  if(backgroundColor)
-  {
-    backgroundColor = generateRandomNumber(age);
-  }
-  else
-  {
-    background(Math.floor(Math.random() * 256), Math.floor(Math.random() * 256), Math.floor(Math.random() * 256));
-  }
-  fill(255, 0, 0);
-  textSize(100);
-  textAlign(CENTER, CENTER);
-  text(numberOfYou, windowWidth/2, windowHeight/2 - 100);
+
+  displayNoY(numberOfYou, backgroundColor);
 }
+
+
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+
 
 //**DISPLAY FUNCTIONS **//
 
 //function that displays the NoY
 function displayNoY(NoY, backgroundColor)
 {
+  //debugging
   console.log("displayNoY called");
+
   clear();
-  background(backgroundColor, backgroundColor, backgroundColor);
-  fill(255, 0, 0);
+  let r = backgroundColor;
+  let g = backgroundColor;
+  let b = backgroundColor;
+  background(r, g, b);
+
+  // Determine the contrasting text color
+  let textBrightness = (r + g + b) / 3;
+  let textColor = (textBrightness < 128) ? 255 : 0;
+  // Set the fill color for the text
+  fill(textColor);
+  
   textSize(100);
   textAlign(CENTER, CENTER);
   text(NoY, windowWidth/2, windowHeight/2 - 100);
@@ -205,7 +287,11 @@ function displayNoY(NoY, backgroundColor)
 function displayUserData(backgroundColor) 
 {
   clear();
-  background(backgroundColor, backgroundColor, backgroundColor);
+  let r = backgroundColor;
+  let g = backgroundColor;
+  let b = backgroundColor;
+  background(r, g, b);
+  
   let data = [
     `Age: ${age}`,
     `Gender: ${gender}`,
@@ -214,31 +300,42 @@ function displayUserData(backgroundColor)
     `Location: ${currentPlace}`
   ];
   
-  fill(255, 0, 0);
+  // Determine the contrasting text color
+  let textBrightness = (r + g + b) / 3;
+  let textColor = (textBrightness < 128) ? 255 : 0;
+  // Set the fill color for the text
+  fill(textColor);
+
   textSize(24);
-  textAlign(CENTER, CENTER);
+  textAlign(LEFT, CENTER);
   
-  let textY = height / 2 - 50;
+  let textY = height / 2 - 400;
   for (let i = 0; i < data.length; i++) {
-    text(data[i], width / 2, textY);
-    textY += 40;
+    text(data[i], width / 2 - 100, textY, width/2, height/2 - 200);
+    textY += 80;
   }
 }
 
-function dataButtonClicked() {
+function dataButtonClicked() 
+{
   if (flipped) {
-    displayNoY(NoY, backgroundColor);
-    button.html("Number of You");
+    displayNoY(numberOfYou, backgroundColor);
+    dataButton.html("number");
   } else {
     displayUserData(backgroundColor);
-    button.html("Data");
+    dataButton.html("data");
   }
   flipped = !flipped;
 }
 
-function changeButtonColor() {
-  button.style("background-color", flipped ? "#FF0000" : "#00FF00");
-}
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+
+//**DATA FUNCTIONS**//
 
 //GETTING THE DATE
 // NICKED FROM https://editor.p5js.org/bitSpaz/sketches/hiUY5zSr7
@@ -253,13 +350,16 @@ function getDate()
 }
 
 //GEOLOCATION FUNCTIONS
-function geolocationData()
+function geolocationData(position) 
 {
-  //geolocation
-  clear();
-  latd = locationData.latitude;
-  lngo = locationData.longitude;
-  console.log("lat: " + latd + " lng: " + lngo);
+  // Process the geolocation data here
+  
+  latd = position.coords.latitude;
+  lngo = position.coords.longitude;
+  if(latd && lngo) 
+  {
+    console.log("lat: " + latd + " lng: " + lngo);
+  } 
   const options = 
   {
     lat: latd,
@@ -267,25 +367,21 @@ function geolocationData()
     zoom: 25,
     style: "http://{s}.tile.osm.org/{z}/{x}/{y}.png"
   }
-  textSize(50);
-  fill(255, 0, 0);
-  textAlign(CENTER, CENTER);
-  text("Getting Date and Location", windowWidth/2, windowHeight/2 - 100);
+  
   myMap = mappa.tileMap(options);
   myMap.overlay(canvas);
-  currentPlace = 255;
 
-  
-  // reverseGeocode(latd, lngo)
-  // .then(address => {
-  //   console.log("Reverse geocoding result:", address);
-  //   currentPlace = address;
-  // })
-  // .catch(error => {
-  //   console.error("Reverse geocoding error:", error);
-  // });
+  reverseGeocode(latd, lngo)
+  .then(address => {
+    console.log("Reverse geocoding result:", address);
+    currentPlace = address;
+  })
+  .catch(error => {
+    console.error("Reverse geocoding error:", error);
+  });
+
+  setTimeout(cameraScene, 1000);
 }
-
 
 
 // **FACE DETECTION
@@ -395,32 +491,44 @@ async function reverseGeocode(lat, lng) {
   }
 }
 
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+
 
 // **UTILITIES**
 
-//Saving the NoY
-function saveNumberOfYou(numberOfYou) {
-  localStorage.setItem('numberOfYou', numberOfYou);
-}
-
-//deleting the NoY
-function deleteNumberOfYou() {
-  localStorage.removeItem('numberOfYou');
-}
 
 //generate a random number based on a seed
 function generateRandomNumber(seed) {
-  const hash = (value) => {
-    let x = Math.sin(value) * 10000;
-    return x - Math.floor(x);
-  };
-
-  const normalizedSeed = seed % 1; // Ensure seed is between 0 and 1
-  const randomFloat = hash(normalizedSeed);
-  const randomNumber = Math.floor(randomFloat * 256);
-
-  return randomNumber;
+  const random = Math.sin(seed) * 10000;
+  return Math.floor((random - Math.floor(random)) * 256);
 }
+
+
+//CHECKING WHETHER IT'S A NEW DAY
+function isNewDay() {
+  const savedDate = localStorage.getItem('savedDate');
+  if (savedDate) {
+    const currentDate = new Date();
+    const currentDateString = currentDate.toDateString();
+    return currentDateString !== savedDate;
+  }
+  return true; // If no saved date exists, consider it a new day
+}
+
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+
+// **SAVING AND LOADING AND DELETING**
+
 
 //Saving the User Data
 function saveUserData(age, gender, mood, currentPlace) {
@@ -450,14 +558,23 @@ function loadUserData() {
   // };
 }
 
+function deleteUserData() {
+  localStorage.removeItem('age');
+  localStorage.removeItem('gender');
+  localStorage.removeItem('mood');
+  localStorage.removeItem('humor');  
+  localStorage.removeItem('currentPlace');
+  localStorage.removeItem('backgroundColor'); 
+}
 
+//Saving the NoY
+function saveNumberOfYou(numberOfYou) {
+  localStorage.setItem('numberOfYou', numberOfYou);
+}
 
-//RESIZE THE WINDOW
-// when the browser window is resized
-function windowResized() {
-  clear();
-  resizeCanvas(windowWidth, windowHeight);
-  background(255, 255, 255);
+//deleting the NoY
+function deleteNumberOfYou() {
+  localStorage.removeItem('numberOfYou');
 }
 
 //SAVING THE DAY
@@ -468,48 +585,29 @@ function saveCurrentDate() {
   localStorage.setItem('savedDate', dateString);
 }
 
-//CHECKING WHETHER IT'S A NEW DAY
-function isNewDay() {
-  const savedDate = localStorage.getItem('savedDate');
-  if (savedDate) {
-    const currentDate = new Date();
-    const currentDateString = currentDate.toDateString();
-    return currentDateString !== savedDate;
-  }
-  return true; // If no saved date exists, consider it a new day
+function deleteCurrentDate() {
+  localStorage.removeItem('savedDate');
 }
 
 
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
+//************************************************************************************************************************************************************************************
 
-// //UI CODE
-// let isFlipped = false;
+// **USER INTERFACE**
 
-// function flip() 
-// {
-//   const flipContainer = document.querySelector('.flip-container');
-//   flipContainer.classList.toggle('flipped');
-//   isFlipped = !isFlipped;
-// }
+function changeButtonColor() {
+  dataButton.style("background-color", flipped ? "#FF0000" : "#00FF00");
+}
 
-// // let number = 0 ;
-// // document.getElementById("number").textContent = number;
 
-// // Accessing individual elements
-// const genderOnScreen = document.getElementById("gender");
-// const ageOnScreen = document.getElementById("age");
-// const moodOnScreen = document.getElementById("mood");
-// const locationOnScreen = document.getElementById("location");
-// const humorOnScreen = document.getElementById("humor");
-
-// // Example usage:
-// genderOnScreen.textContent = "Gender: Female";
-// ageOnScreen.textContent = "Age: 30";
-// moodOnScreen.textContent = "Mood: Sad";
-// locationOnScreen.textContent = "Location: Los Angeles";
-// humorOnScreen.textContent = "Humor: Sarcastic";
-
-// // Change background color with JavaScript
-// function changeBackgroundColor(color) 
-// {
-//   document.body.style.backgroundColor = color;
-// }
+//RESIZE THE WINDOW
+// when the browser window is resized
+function windowResized() {
+  clear();
+  resizeCanvas(windowWidth, windowHeight);
+  background(255, 255, 255);
+}
