@@ -1,194 +1,567 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Number of You</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Number of You: Today</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    body {
-      background-color: #FFFFFF;
-      position: relative;
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
-    h1 {
-      font-family: Futura, sans-serif;
-      font-weight: bold;
-      font-size: 48px;
-      text-align: center;
-      margin-top: 100px;
-    }
-    p {
-      font-family: Futura, sans-serif;
-      font-size: 24px;
-      text-align: center;
-      margin-top: 50px;
-    }
-    .link {
-      position: fixed;
-      bottom: 10px;
-      padding: 5px 10px;
-      font-family: Futura, sans-serif;
-      font-size: 16px;
-      text-decoration: none;
-      color: #000000;
-    }
-    .link.about {
-      right: 10px;
-    }
-    .link.privacy {
-      left: 10px;
-    }
-  </style>
-  <script src="libraries/p5.min.js"></script>
-  <script src="libraries/p5.sound.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/face-api.js/dist/face-api.min.js"></script>
-  <script src="libraries/ml5.min.js"></script>
-  <script src="libraries/p5.geolocation.js"></script>
-  <script src="libraries/mappa.js"></script>
-  <script src="libraries/p5.speech.js"></script>
-</head>
-<body>
-  <h1>Number of You: Today</h1>
-  <p id="number"></p>
-  <a class="link about" href="https://ridiculous.software/numberofyou" target="_blank">About</a>
-  <a class="link privacy" href="https://stupid.technology/numberofyou" target="_blank">Privacy and Data</a>
-  <script src="sketch.js"></script>
-</body>
-</html>
 
-<!-- <!DOCTYPE html>
-<html>
-<head>
-	<meta charset="UTF-8">
-	<title>Number of You</title>
-	<style>
-		body {
-			background-color: #FFFFFF;
-		}
-		h1 {
-			font-family: Futura, sans-serif;
-			font-weight: bold;
-			font-size: 48px;
-			text-align: center;
-			margin-top: 100px;
-		}
-		p {
-			font-family: Futura, sans-serif;
-			font-size: 24px;
-			text-align: center;
-			margin-top: 50px;
-		}
-	</style>
-  <script src="libraries/p5.min.js"></script>
-  <script src="libraries/p5.sound.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/face-api.js/dist/face-api.min.js"></script>
-  <script src="libraries/ml5.min.js"></script>
-    <script src="libraries/p5.geolocation.js"></script>
-    <script src="libraries/mappa.js"></script>
-    <script src="libraries/p5.speech.js"></script>
-  </head>
-<body>
-	<h1>Number of You: Today</h1>
-	<p id="number"></p>
-  <script src="sketch.js"></script>
-</body>
-</html> -->
-<!-- <!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Number of You</title>
-  <style>
     body {
-      background-color: #FFFFFF;
+      font-family: 'Futura', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #2c5aa0 0%, #4a7bc8 25%, #6ba3d6 50%, #87ceeb 75%, #b0e0e6 100%);
+      min-height: 100vh;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      margin: 0;
+      color: white;
+      overflow: hidden;
     }
+
     .container {
       text-align: center;
+      max-width: 90%;
+      padding: 2rem;
     }
+
     h1 {
-      font-family: Futura, sans-serif;
+      font-size: clamp(3rem, 8vw, 8rem);
       font-weight: bold;
-      font-size: 48px;
+      margin-bottom: 2rem;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+    }
+
+    .start-button {
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      color: white;
+      font-family: 'Futura', sans-serif;
+      font-size: clamp(1.2rem, 3vw, 2rem);
+      font-weight: bold;
+      padding: 1rem 3rem;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .start-button:hover {
+      background: rgba(255, 255, 255, 0.3);
+      border-color: rgba(255, 255, 255, 0.8);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .start-button:active {
+      transform: translateY(0);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Map styles */
+    #mapContainer {
       position: fixed;
       top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 10px;
-      margin: 0;
-      background-color: #FFFFFF;
-      z-index: 1;
-    }
-    p {
-      font-family: Futura, sans-serif;
-      font-size: 24px;
-      margin-top: 50px;
-    }
-    #number {
-      font-size: 96px;
-    }
-    .flip-container {
-      perspective: 1000px;
-      display: inline-block;
-      cursor: pointer;
-    }
-    .flip-container .flipper {
-      transition: 0.6s;
-      transform-style: preserve-3d;
-      position: relative;
-    }
-    .flip-container .front,
-    .flip-container .back {
-      backface-visibility: hidden;
-      position: absolute;
-      top: 0;
       left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1000;
+      display: none;
+      background: linear-gradient(135deg, #2c5aa0 0%, #4a7bc8 25%, #6ba3d6 50%, #87ceeb 75%, #b0e0e6 100%);
     }
-    .flip-container .front {
-      z-index: 2;
+
+    #map {
+      width: 100%;
+      height: 100%;
+      border-radius: 0;
     }
-    .flip-container .back {
-      transform: rotateY(180deg);
-      padding: 20px;
-      border: 1px solid #000000;
-      border-radius: 5px;
+
+    /* Pulsing dot animation */
+    .pulsing-dot {
+      width: 20px;
+      height: 20px;
+      background: #4285f4;
+      border: 3px solid #ffffff;
+      border-radius: 50%;
+      box-shadow: 0 0 0 0 rgba(66, 133, 244, 0.7);
+      animation: pulse 2s infinite;
     }
-    .flip-container.flipped .flipper {
-      transform: rotateY(180deg);
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(66, 133, 244, 0.7);
+      }
+      70% {
+        box-shadow: 0 0 0 20px rgba(66, 133, 244, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(66, 133, 244, 0);
+      }
+    }
+
+    /* Hide/show animation */
+    .fade-out {
+      opacity: 0;
+      transform: translateY(-20px);
+      transition: all 0.5s ease;
+    }
+
+    .fade-in {
+      opacity: 1;
+      transform: translateY(0);
+      transition: all 0.5s ease;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+      }
+      
+      h1 {
+        margin-bottom: 1.5rem;
+      }
+      
+      .start-button {
+        padding: 0.8rem 2rem;
+        font-size: 1.2rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      h1 {
+        margin-bottom: 1rem;
+      }
+      
+      .start-button {
+        padding: 0.7rem 1.5rem;
+        font-size: 1rem;
+      }
     }
   </style>
-  <script src="libraries/p5.min.js"></script>
-  <script src="libraries/p5.sound.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/face-api.js/dist/face-api.min.js"></script>
-  <script src="libraries/ml5.min.js"></script>
-  <script src="libraries/p5.geolocation.js"></script>
-  <script src="libraries/mappa.js"></script>
 </head>
 <body>
-  <h1>Number of You: Today</h1>
-  <div class="container">
-    <div class="flip-container" onclick="flip()">
-      <div class="flipper">
-        <div class="front">
-          <p id="number"></p>
-        </div>
-        <div class="back">
-          <ul>
-            <li id="gender">Gender: Male</li>
-            <li id="age">Age: 25</li>
-            <li id="mood">Mood: Happy</li>
-            <li id="location">Location: New York</li>
-            <li id="humor">Humor: Witty</li>
-          </ul>
-        </div>
-      </div>
-    </div>
+  <div class="container" id="mainContainer">
+    <h1>Number of You: Today</h1>
+    <button class="start-button" id="startButton">Start</button>
   </div>
-  <script src="sketch.js"></script>
+
+  <!-- Map container -->
+  <div id="mapContainer">
+    <div id="map"></div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    // Global variables for date and location
+    let currentDate;
+    let locationData = null;
+    let locationError = null;
+    let map = null;
+    let userMarker = null;
+
+    // Global variables for media access
+    let cameraStream = null;
+    let cameraError = null;
+    let microphoneAccess = false;
+    let microphoneError = null;
+
+    // Enhanced date functionality with timestamps
+    function getDate() {
+      let date = new Date();
+      function formatDate() {
+        return date.toDateString().slice(4);
+      }
+      return formatDate();
+    }
+
+    function getDateWithTimestamp() {
+      const date = new Date();
+      return {
+        dateString: date.toDateString().slice(4),
+        fullDate: date.toDateString(),
+        timestamp: date.getTime(),
+        isoString: date.toISOString(),
+        localString: date.toLocaleString(),
+        timeOnly: date.toLocaleTimeString(),
+        year: date.getFullYear(),
+        month: date.getMonth() + 1,
+        day: date.getDate(),
+        hour: date.getHours(),
+        minute: date.getMinutes(),
+        second: date.getSeconds()
+      };
+    }
+
+    function saveCurrentDate() {
+      const currentDate = new Date();
+      console.log("Current date: ", currentDate);
+      const dateString = currentDate.toDateString();
+      const timestamp = currentDate.getTime();
+      localStorage.setItem('savedDate', dateString);
+      localStorage.setItem('savedTimestamp', timestamp);
+      return { dateString, timestamp };
+    }
+
+    function isNewDay() {
+      const savedDate = localStorage.getItem('savedDate');
+      if (savedDate) {
+        const currentDate = new Date();
+        const currentDateString = currentDate.toDateString();
+        return currentDateString !== savedDate;
+      }
+      return true; // If no saved date exists, consider it a new day
+    }
+
+    // Geolocation functionality (adapted from sketch.js)
+    function getCurrentPosition() {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          const error = "Geolocation is not available in this browser.";
+          console.error(error);
+          locationError = error;
+          reject(error);
+          return;
+        }
+
+        const options = {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000 // 5 minutes
+        };
+
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            locationData = {
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+              accuracy: position.coords.accuracy,
+              timestamp: position.timestamp
+            };
+            console.log("Location obtained:", locationData);
+            
+            // Try to get readable location name
+            try {
+              const placeName = await reverseGeocode(locationData.latitude, locationData.longitude);
+              locationData.placeName = placeName;
+              locationData.city = extractCityFromAddress(placeName);
+              console.log("Location resolved to:", placeName);
+            } catch (geoError) {
+              console.log("Could not resolve location name:", geoError);
+              locationData.placeName = "Unknown location";
+              locationData.city = "Unknown city";
+            }
+            
+            resolve(locationData);
+          },
+          (error) => {
+            let errorMessage;
+            switch(error.code) {
+              case error.PERMISSION_DENIED:
+                errorMessage = "User denied the request for Geolocation.";
+                break;
+              case error.POSITION_UNAVAILABLE:
+                errorMessage = "Location information is unavailable.";
+                break;
+              case error.TIMEOUT:
+                errorMessage = "The request to get user location timed out.";
+                break;
+              default:
+                errorMessage = "An unknown error occurred.";
+                break;
+            }
+            console.error("Geolocation error:", errorMessage);
+            locationError = errorMessage;
+            reject(errorMessage);
+          },
+          options
+        );
+      });
+    }
+
+    // Reverse geocoding functionality (adapted from sketch.js)
+    async function reverseGeocode(lat, lng) {
+      const apiUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`;
+
+      try {
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        
+        const address = data.display_name;
+        return address;
+      } catch (error) {
+        console.error("Reverse geocoding error:", error);
+        throw error;
+      }
+    }
+
+    // Extract city from full address
+    function extractCityFromAddress(fullAddress) {
+      if (!fullAddress) return "Unknown city";
+      
+      // Split address by commas and try to find city-like components
+      const parts = fullAddress.split(',').map(part => part.trim());
+      
+      // Usually city is one of the first few components
+      // Skip house numbers and street names, look for actual city names
+      for (let i = 1; i < Math.min(parts.length, 4); i++) {
+        const part = parts[i];
+        // Skip parts that look like postal codes or countries
+        if (!/^\d+$/.test(part) && part.length > 2) {
+          return part;
+        }
+      }
+      
+      return parts[1] || "Unknown city";
+    }
+
+    // Media access functionality (adapted from sketch.js camera and speech)
+    async function requestCameraAccess() {
+      try {
+        console.log("Requesting camera access...");
+        const constraints = {
+          video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            facingMode: 'user'
+          }
+        };
+
+        cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+        console.log("Camera access granted");
+        
+        // Create a hidden video element to test the stream
+        const videoElement = document.createElement('video');
+        videoElement.srcObject = cameraStream;
+        videoElement.style.display = 'none';
+        document.body.appendChild(videoElement);
+        
+        return cameraStream;
+      } catch (error) {
+        console.error("Camera access error:", error);
+        cameraError = error.message;
+        
+        let errorMessage;
+        switch(error.name) {
+          case 'NotAllowedError':
+            errorMessage = "Camera access denied by user";
+            break;
+          case 'NotFoundError':
+            errorMessage = "No camera found";
+            break;
+          case 'NotReadableError':
+            errorMessage = "Camera is already in use";
+            break;
+          default:
+            errorMessage = "Camera access failed: " + error.message;
+        }
+        cameraError = errorMessage;
+        throw error;
+      }
+    }
+
+    async function requestMicrophoneAccess() {
+      try {
+        console.log("Requesting microphone access...");
+        const constraints = {
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        };
+
+        const audioStream = await navigator.mediaDevices.getUserMedia(constraints);
+        console.log("Microphone access granted");
+        microphoneAccess = true;
+        
+        // Stop the stream immediately since we just need permission
+        audioStream.getTracks().forEach(track => track.stop());
+        
+        return true;
+      } catch (error) {
+        console.error("Microphone access error:", error);
+        microphoneAccess = false;
+        
+        let errorMessage;
+        switch(error.name) {
+          case 'NotAllowedError':
+            errorMessage = "Microphone access denied by user";
+            break;
+          case 'NotFoundError':
+            errorMessage = "No microphone found";
+            break;
+          case 'NotReadableError':
+            errorMessage = "Microphone is already in use";
+            break;
+          default:
+            errorMessage = "Microphone access failed: " + error.message;
+        }
+        microphoneError = errorMessage;
+        throw error;
+      }
+    }
+
+    async function requestMediaPermissions() {
+      console.log("Requesting media permissions...");
+      
+      // Request camera access
+      try {
+        await requestCameraAccess();
+      } catch (error) {
+        console.log("Camera permission failed, continuing...");
+      }
+
+      // Request microphone access
+      try {
+        await requestMicrophoneAccess();
+      } catch (error) {
+        console.log("Microphone permission failed, continuing...");
+      }
+
+      console.log("Media permission requests completed");
+      console.log("Camera available:", !!cameraStream);
+      console.log("Microphone available:", microphoneAccess);
+    }
+
+    // Map functionality
+    function initializeMap() {
+      if (!locationData) {
+        console.error("No location data available for map");
+        return;
+      }
+
+      // Create map centered on user location
+      map = L.map('map').setView([locationData.latitude, locationData.longitude], 15);
+
+      // Add OpenStreetMap tiles (matching original project style)
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+      }).addTo(map);
+
+      // Create custom pulsing marker
+      const pulsingIcon = L.divIcon({
+        className: 'pulsing-dot',
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
+      });
+
+      // Add user location marker
+      userMarker = L.marker([locationData.latitude, locationData.longitude], {
+        icon: pulsingIcon
+      }).addTo(map);
+
+      // Optional: Add a popup with location info
+      if (locationData.placeName) {
+        userMarker.bindPopup(`You are here<br>${locationData.city}`).openPopup();
+      }
+
+      console.log("Map initialized with user location");
+    }
+
+    function showMap() {
+      const mainContainer = document.getElementById('mainContainer');
+      const mapContainer = document.getElementById('mapContainer');
+
+      // Hide title and button with fade effect
+      mainContainer.classList.add('fade-out');
+
+      // Wait for fade out, then show map
+      setTimeout(() => {
+        mainContainer.style.display = 'none';
+        mapContainer.style.display = 'block';
+        
+        // Initialize map after container is visible
+        setTimeout(() => {
+          initializeMap();
+          
+          // Start 5-second timer for automatic redirection
+          console.log("Starting 5-second timer for redirection...");
+          setTimeout(() => {
+            console.log("Redirecting to next page...");
+            window.location.href = 'next-page.html';
+          }, 5000);
+        }, 100);
+      }, 500);
+    }
+
+    // Initialize data collection on page load
+    async function initializeData() {
+      console.log("Initializing data collection...");
+      
+      // Get current date with full timestamp
+      currentDate = getDateWithTimestamp();
+      console.log("Current date with timestamp:", currentDate);
+      
+      // Save current date
+      saveCurrentDate();
+      
+      // Check if it's a new day
+      const newDay = isNewDay();
+      console.log("Is new day:", newDay);
+      
+      // Request media permissions first
+      try {
+        await requestMediaPermissions();
+        console.log("Media permissions processed");
+      } catch (error) {
+        console.log("Media permissions failed:", error);
+      }
+      
+      // Try to get location
+      try {
+        await getCurrentPosition();
+        console.log("Location data ready:", locationData);
+      } catch (error) {
+        console.log("Could not get location:", error);
+      }
+      
+      console.log("Data initialization complete");
+    }
+
+    // Event listeners
+    document.getElementById('startButton').addEventListener('click', function() {
+      console.log('Start button clicked');
+      console.log('Current date:', currentDate);
+      console.log('Location data:', locationData);
+      console.log('Location error:', locationError);
+      console.log('Camera available:', !!cameraStream);
+      console.log('Camera error:', cameraError);
+      console.log('Microphone available:', microphoneAccess);
+      console.log('Microphone error:', microphoneError);
+      
+      // Check if we have location data before showing map
+      if (locationData && locationData.latitude && locationData.longitude) {
+        showMap();
+      } else {
+        console.error('Cannot show map: No location data available');
+        alert('Location is required to continue. Please refresh and allow location access.');
+      }
+    });
+
+    // Handle window resize for responsive behavior
+    window.addEventListener('resize', function() {
+      // Future: Handle any resize-specific logic if needed
+    });
+
+    // Initialize when page loads
+    window.addEventListener('load', function() {
+      initializeData();
+    });
+  </script>
 </body>
-</html> -->
-
-
-
+</html>

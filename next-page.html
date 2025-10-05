@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Number of You: Analysis</title>
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js/dist/face-api.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Futura', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #2c5aa0 0%, #4a7bc8 25%, #6ba3d6 50%, #87ceeb 75%, #b0e0e6 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      overflow: hidden;
+    }
+
+    .container {
+      text-align: center;
+      max-width: 90%;
+      padding: 2rem;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 6vw, 4rem);
+      font-weight: bold;
+      margin-bottom: 2rem;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      line-height: 1.1;
+    }
+
+    p {
+      font-size: clamp(1rem, 3vw, 1.5rem);
+      opacity: 0.8;
+    }
+
+    /* Camera styles */
+    #videoContainer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      display: none;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 1000;
+    }
+
+    #video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    #canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+    }
+
+    .loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 2rem;
+      color: white;
+      text-align: center;
+      font-family: 'Futura', sans-serif;
+      font-weight: bold;
+    }
+
+    /* Blinking text animation */
+    .blinking-text {
+      animation: blink 2s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0.3; }
+    }
+
+    /* Loading dots animation */
+    .loading-dots {
+      display: inline-block;
+      font-size: 2rem;
+      margin-left: 0.5rem;
+    }
+
+    .loading-dots::after {
+      content: '';
+      animation: dots 1.5s steps(4, end) infinite;
+    }
+
+    @keyframes dots {
+      0% { content: ''; }
+      25% { content: '.'; }
+      50% { content: '..'; }
+      75% { content: '...'; }
+      100% { content: ''; }
+    }
+
+    /* Success message styles */
+    .success-message {
+      font-size: 2.5rem;
+      color: #4CAF50;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      animation: fadeInScale 0.8s ease-out;
+    }
+
+    @keyframes fadeInScale {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.8);
+      }
+      100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+
+    .fade-in {
+      opacity: 1;
+      transition: opacity 1s ease;
+    }
+
+    .fade-out {
+      opacity: 0;
+      transition: opacity 1s ease;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="mainContainer">
+    <h1>Analyzing...</h1>
+    <p>Please wait while we prepare the system</p>
+  </div>
+
+  <!-- Camera container -->
+  <div id="videoContainer">
+    <video id="video" autoplay muted playsinline></video>
+    <canvas id="canvas"></canvas>
+    <div class="loading" id="loadingText">
+      <span class="blinking-text">Loading facial recognition models</span><span class="loading-dots"></span>
+    </div>
+  </div>
+
+  <script>
+    // Global variables for facial recognition (adapted from sketch.js)
+    const model_url = '/models';
+    let faceDetections = [];
+    let video;
+    let canvas;
+    let ctx;
+    let modelsLoaded = false;
+    let stream = null;
+
+    // Facial data variables
+    let userGender = null;
+    let userAge = null;
+    let userMood = null;
+    let facialDataExtracted = false;
+
+    // Load face-api.js models (adapted from sketch.js preload)
+    async function loadModels() {
+      console.log("Loading facial recognition models...");
+      
+      try {
+        console.log("Loading SSD MobileNet model...");
+        await faceapi.loadSsdMobilenetv1Model(model_url);
+        console.log("SSD MobileNet model loaded");
+        
+        console.log("Loading Age & Gender model...");
+        await faceapi.loadAgeGenderModel(model_url);
+        console.log("Age & Gender model loaded");
+        
+        console.log("Loading Face Expression model...");
+        await faceapi.loadFaceExpressionModel(model_url);
+        console.log("Face Expression model loaded");
+        
+        modelsLoaded = true;
+        console.log("All facial recognition models loaded successfully");
+        return true;
+      } catch (error) {
+        console.error("Error loading facial recognition models:", error);
+        console.error("Model URL being used:", model_url);
+        modelsLoaded = false;
+        return false;
+      }
+    }
+
+    // Start camera feed
+    async function startCamera() {
+      try {
+        console.log("Starting camera feed...");
+        
+        const constraints = {
+          video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            facingMode: 'user'
+          }
+        };
+
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        
+        video = document.getElementById('video');
+        video.srcObject = stream;
+        
+        await new Promise((resolve) => {
+          video.onloadedmetadata = () => {
+            resolve();
+          };
+        });
+
+        // Setup canvas for face detection overlay
+        canvas = document.getElementById('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx = canvas.getContext('2d');
+
+        console.log("Camera feed started successfully");
+        return true;
+      } catch (error) {
+        console.error("Error starting camera:", error);
+        return false;
+      }
+    }
+
+    // Continuous face detection for live green frame drawing
+    let detectionInterval = null;
+    let analysisComplete = false;
+
+    async function drawLiveFaceDetection() {
+      if (!modelsLoaded || !video || video.readyState !== 4 || analysisComplete) {
+        return;
+      }
+
+      try {
+        const detections = await faceapi.detectAllFaces(video);
+        
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw green frames around all detected faces
+        if (detections.length > 0) {
+          detections.forEach(detection => {
+            const box = detection.box;
+            ctx.strokeStyle = '#00FF00'; // Green color
+            ctx.lineWidth = 4;
+            ctx.strokeRect(box.x, box.y, box.width, box.height);
+          });
+        }
+      } catch (error) {
+        console.log("Live detection error:", error.message);
+      }
+    }
+
+    function startLiveFaceDetection() {
+      if (detectionInterval) return;
+      
+      console.log("Starting live face detection...");
+      detectionInterval = setInterval(drawLiveFaceDetection, 100); // 10 FPS
+    }
+
+    function stopLiveFaceDetection() {
+      if (detectionInterval) {
+        clearInterval(detectionInterval);
+        detectionInterval = null;
+        console.log("Live face detection stopped");
+      }
+    }
+
+    // Perform facial recognition (adapted from sketch.js faceRead)
+    async function analyzeFace() {
+      console.log("Starting face analysis...");
+      console.log("Models loaded:", modelsLoaded);
+      console.log("Video available:", !!video);
+      console.log("Video ready state:", video ? video.readyState : 'N/A');
+      
+      if (!modelsLoaded) {
+        console.error("Models not loaded");
+        return false;
+      }
+      
+      if (!video) {
+        console.error("Video not available");
+        return false;
+      }
+      
+      if (video.readyState !== 4) {
+        console.log("Video not ready, waiting...");
+        return false;
+      }
+
+      try {
+        console.log("Running face detection...");
+        
+        const detections = await faceapi
+          .detectAllFaces(video)
+          .withAgeAndGender()
+          .withFaceExpressions();
+
+        console.log("Detections found:", detections.length);
+
+        if (detections.length > 0) {
+          const detection = detections[0];
+          console.log("Face detected, extracting data...");
+          
+          // Extract data (adapted from sketch.js showFaceDetectionData)
+          userAge = Math.floor(detection.age);
+          userGender = detection.gender;
+          
+          // Find dominant mood from expressions
+          const expressions = detection.expressions;
+          let highestScore = 0;
+          let dominantMood = 'neutral';
+          
+          console.log("Raw expressions:", expressions);
+          
+          for (const [emotion, score] of Object.entries(expressions)) {
+            console.log(`  ${emotion}: ${(score * 100).toFixed(1)}%`);
+            if (score > highestScore) {
+              highestScore = score;
+              dominantMood = emotion;
+            }
+          }
+          
+          userMood = dominantMood;
+          facialDataExtracted = true;
+          
+          // Log data to console only (not shown to user)
+          console.log("=== FACIAL ANALYSIS COMPLETE ===");
+          console.log("Age:", userAge);
+          console.log("Gender:", userGender);
+          console.log("Mood:", userMood, `(${(highestScore * 100).toFixed(1)}% confidence)`);
+          console.log("All expressions:", expressions);
+          console.log("================================");
+          
+          return true;
+        } else {
+          console.log("No face detected, retrying...");
+          return false;
+        }
+      } catch (error) {
+        console.error("Error analyzing face:", error);
+        console.error("Error details:", error.message);
+        return false;
+      }
+    }
+
+    // Main initialization function
+    async function initializeFacialRecognition() {
+      console.log("Initializing facial recognition system...");
+      
+      // Load models first
+      console.log("Step 1: Loading models...");
+      const modelsSuccess = await loadModels();
+      if (!modelsSuccess) {
+        console.error("Failed to load facial recognition models");
+        document.getElementById('loadingText').textContent = 'Failed to load AI models';
+        return;
+      }
+
+      // Hide main container and show video
+      console.log("Step 2: Setting up camera...");
+      document.getElementById('mainContainer').style.display = 'none';
+      document.getElementById('videoContainer').style.display = 'block';
+      
+      // Start camera
+      const cameraSuccess = await startCamera();
+      if (!cameraSuccess) {
+        console.error("Failed to start camera");
+        document.getElementById('loadingText').textContent = 'Camera access failed';
+        return;
+      }
+
+      // Update loading text
+      document.getElementById('loadingText').innerHTML = 
+        '<span class="blinking-text">Analyzing face</span><span class="loading-dots"></span>';
+      console.log("Step 3: Starting face detection...");
+      
+      // Start live face detection for green frames
+      startLiveFaceDetection();
+      
+      // Wait a moment for camera to stabilize
+      setTimeout(async () => {
+        let attempts = 0;
+        const maxAttempts = 15; // Increased attempts
+        
+        console.log(`Starting ${maxAttempts} face detection attempts...`);
+        
+        // Try to analyze face multiple times
+        const analysisInterval = setInterval(async () => {
+          attempts++;
+          console.log(`Attempt ${attempts}/${maxAttempts}`);
+          
+          const success = await analyzeFace();
+          
+          if (success || attempts >= maxAttempts) {
+            clearInterval(analysisInterval);
+            analysisComplete = true;
+            stopLiveFaceDetection();
+            
+            if (success) {
+              console.log("Facial analysis completed successfully");
+              
+              // Show success message with animation
+              document.getElementById('loadingText').innerHTML = 
+                '<span class="success-message">Face Analysis Complete</span>';
+              
+              // Stop camera after successful analysis
+              if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+              }
+              
+              // Navigate to voice analysis page after 2 seconds
+              setTimeout(() => {
+                console.log("Navigating to voice analysis...");
+                window.location.href = 'voice-analysis.html';
+              }, 2000);
+              
+            } else {
+              console.log("Facial analysis failed after multiple attempts");
+              console.log("Make sure your face is visible and well-lit");
+              document.getElementById('loadingText').textContent = 'Face detection failed - check console';
+            }
+          }
+        }, 2000); // Increased interval to 2 seconds
+      }, 3000); // Increased camera stabilization time
+    }
+
+    // Start the process when page loads
+    window.addEventListener('load', function() {
+      console.log("Facial recognition page loaded");
+      
+      // Start facial recognition after a brief delay
+      setTimeout(() => {
+        initializeFacialRecognition();
+      }, 1000);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Number of You: Voice Analysis</title>
+  <script src="question-loader.js"></script>
+  <script src="https://unpkg.com/ml5@latest/dist/ml5.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Futura', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #2c5aa0 0%, #4a7bc8 25%, #6ba3d6 50%, #87ceeb 75%, #b0e0e6 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      overflow: hidden;
+    }
+
+    .container {
+      text-align: center;
+      max-width: 90%;
+      padding: 2rem;
+    }
+
+    h1 {
+      font-size: clamp(2rem, 6vw, 4rem);
+      font-weight: bold;
+      margin-bottom: 2rem;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      line-height: 1.1;
+    }
+
+    p {
+      font-size: clamp(1rem, 3vw, 1.5rem);
+      opacity: 0.8;
+      margin-bottom: 1rem;
+    }
+
+    /* Blinking text animation */
+    .blinking-text {
+      animation: blink 2s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0.3; }
+    }
+
+    /* Loading dots animation */
+    .loading-dots {
+      display: inline-block;
+      font-size: 2rem;
+      margin-left: 0.5rem;
+    }
+
+    .loading-dots::after {
+      content: '';
+      animation: dots 1.5s steps(4, end) infinite;
+    }
+
+    @keyframes dots {
+      0% { content: ''; }
+      25% { content: '.'; }
+      50% { content: '..'; }
+      75% { content: '...'; }
+      100% { content: ''; }
+    }
+
+    /* Success message styles */
+    .success-message {
+      font-size: 2.5rem;
+      color: #4CAF50;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      animation: fadeInScale 0.8s ease-out;
+    }
+
+    @keyframes fadeInScale {
+      0% {
+        opacity: 0;
+        transform: scale(0.8);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    /* Microphone icon animation */
+    .mic-icon {
+      font-size: 4rem;
+      margin: 2rem 0;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 0.8;
+      }
+      50% {
+        transform: scale(1.1);
+        opacity: 1;
+      }
+    }
+
+    .recording-indicator {
+      display: inline-block;
+      width: 15px;
+      height: 15px;
+      background-color: #ff4444;
+      border-radius: 50%;
+      margin-right: 10px;
+      animation: recordingBlink 1s ease-in-out infinite;
+    }
+
+    @keyframes recordingBlink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0.3; }
+    }
+
+    /* Question display styles */
+    .question-display {
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 20px;
+      padding: 2rem;
+      margin: 2rem 0;
+      backdrop-filter: blur(10px);
+      animation: fadeInUp 0.8s ease-out;
+    }
+
+    @keyframes fadeInUp {
+      0% {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .question-text {
+      font-size: clamp(1.2rem, 4vw, 2rem);
+      font-weight: bold;
+      line-height: 1.4;
+      margin-bottom: 1rem;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container" id="mainContainer">
+    <h1>Voice Analysis</h1>
+    <p id="statusText">
+      <span class="blinking-text">Preparing voice analysis</span><span class="loading-dots"></span>
+    </p>
+    <div id="questionContainer" style="display: none;"></div>
+  </div>
+
+  <script>
+    console.log("Voice analysis page loaded");
+    
+    // Voice analysis variables
+    let speechRecognition = null;
+    let isRecording = false;
+    let recordedText = '';
+    let voiceAnalysisComplete = false;
+    let questionLoader = null;
+    let currentQuestion = null;
+    let recordingStarted = false;
+    let finalTranscript = '';
+    let silenceTimer = null;
+    let hasSpeechDetected = false;
+    let sentimentAnalyzer = null;
+    let emotionAnalysisReady = false;
+    let hasRestarted = false; // Track if we've already restarted once
+
+    // Display a question to the user
+    function displayQuestion(question) {
+      const questionContainer = document.getElementById('questionContainer');
+      
+      questionContainer.innerHTML = `
+        <div class="question-display">
+          <div class="question-text">${question}</div>
+        </div>
+      `;
+      
+      questionContainer.style.display = 'block';
+      console.log("❓ Question displayed:", question);
+    }
+
+    // Initialize ML5.js sentiment analyzer
+    async function initializeSentimentAnalyzer() {
+      try {
+        console.log("Initializing ML5.js sentiment analyzer...");
+        sentimentAnalyzer = ml5.sentiment('MovieReviews');
+        
+        // Wait for model to be ready
+        await new Promise((resolve) => {
+          sentimentAnalyzer.ready(() => {
+            emotionAnalysisReady = true;
+            console.log("✅ Sentiment analyzer ready");
+            resolve();
+          });
+        });
+        
+        return true;
+      } catch (error) {
+        console.error("❌ Error initializing sentiment analyzer:", error);
+        emotionAnalysisReady = false;
+        return false;
+      }
+    }
+
+    // Analyze emotions from text using ML5.js
+    function analyzeEmotions(text) {
+      if (!emotionAnalysisReady || !sentimentAnalyzer) {
+        console.warn("⚠️ Sentiment analyzer not ready");
+        return {
+          sentiment: 'neutral',
+          confidence: 0,
+          score: 0.5,
+          label: 'Unable to analyze'
+        };
+      }
+
+      try {
+        const prediction = sentimentAnalyzer.predict(text);
+        console.log("ML5.js prediction:", prediction);
+        
+        // Determine emotion category based on score
+        let emotionCategory = '';
+        let emotionEmoji = '';
+        
+        if (prediction.score > 0.6) {
+          emotionCategory = 'positive';
+          emotionEmoji = 'POSITIVE';
+        } else if (prediction.score < 0.4) {
+          emotionCategory = 'negative';
+          emotionEmoji = 'NEGATIVE';
+        } else {
+          emotionCategory = 'neutral';
+          emotionEmoji = 'NEUTRAL';
+        }
+
+        return {
+          sentiment: emotionCategory,
+          confidence: prediction.confidence || Math.abs(prediction.score - 0.5) * 2,
+          score: prediction.score,
+          label: prediction.label || emotionCategory,
+          emoji: emotionEmoji,
+          rawPrediction: prediction
+        };
+      } catch (error) {
+        console.error("❌ Error analyzing emotions:", error);
+        return {
+          sentiment: 'error',
+          confidence: 0,
+          score: 0.5,
+          label: 'Analysis failed'
+        };
+      }
+    }
+
+    // Voice analysis with real emotion detection
+    function analyzeVoice(text, question) {
+      console.log("🔍 Analyzing voice input:", text);
+      console.log("❓ In response to question:", question);
+      
+      // Run emotion analysis on the text
+      const emotionAnalysis = analyzeEmotions(text);
+      
+      // Calculate humor type based on sentiment (from original sketch.js logic)
+      let humor = 'neutral';
+      if (emotionAnalysis.score < 0.3) {
+        humor = 'melancholic';
+      } else if (emotionAnalysis.score < 0.5) {
+        humor = 'choleric';
+      } else if (emotionAnalysis.score < 0.7) {
+        humor = 'phlegmatic';
+      } else {
+        humor = 'sanguine';
+      }
+      
+      const analysis = {
+        text: text,
+        question: question,
+        sentiment: emotionAnalysis.sentiment,
+        sentimentScore: emotionAnalysis.score,
+        confidence: emotionAnalysis.confidence,
+        humor: humor,
+        emotion: {
+          category: emotionAnalysis.sentiment,
+          emoji: emotionAnalysis.emoji,
+          score: emotionAnalysis.score,
+          confidence: emotionAnalysis.confidence,
+          rawData: emotionAnalysis.rawPrediction
+        },
+        wordCount: text.split(' ').length,
+        timestamp: new Date().toISOString()
+      };
+
+      console.log("=== EMOTION ANALYSIS COMPLETE ===");
+      console.log("Question:", analysis.question);
+      console.log("Response:", analysis.text);
+      console.log("Emotion Category:", analysis.emotion.category);
+      console.log("Emotion Label:", analysis.emotion.emoji);
+      console.log("Sentiment Score:", (analysis.sentimentScore * 100).toFixed(1) + '%');
+      console.log("Humor Type:", analysis.humor);
+      console.log("Confidence:", (analysis.confidence * 100).toFixed(1) + '%');
+      console.log("Word Count:", analysis.wordCount);
+      console.log("Timestamp:", analysis.timestamp);
+      console.log("Raw ML5 Prediction Data:", analysis.emotion.rawData);
+      console.log("Full Analysis Object:", analysis);
+      console.log("===================================");
+
+      return analysis;
+    }
+
+    // Start silence detection for pause-based recording
+    function startSilenceDetection() {
+      if (recordingStarted) return; // Prevent multiple starts
+      
+      recordingStarted = true;
+      console.log("Starting pause-based recording");
+      
+      // Update UI to show recording in progress
+      document.getElementById('statusText').innerHTML = 
+        '<span class="recording-indicator"></span>Recording... Speak now, recording will stop when you pause';
+    }
+
+    // Reset silence timer when speech is detected
+    function resetSilenceTimer() {
+      if (silenceTimer) {
+        clearTimeout(silenceTimer);
+      }
+      
+      // Set a 2-second silence timer
+      silenceTimer = setTimeout(() => {
+        console.log("Silence detected - stopping recording");
+        stopRecording();
+      }, 2000); // Stop after 2 seconds of silence
+    }
+
+    // Stop recording and process results
+    function stopRecording() {
+      console.log("Stopping recording...");
+      
+      if (silenceTimer) {
+        clearTimeout(silenceTimer);
+        silenceTimer = null;
+      }
+      
+      if (speechRecognition) {
+        speechRecognition.stop();
+      }
+      
+      isRecording = false;
+      recordingStarted = false;
+      
+      // Show recording complete message
+      document.getElementById('statusText').innerHTML = 
+        '<span class="success-message">Recording Complete</span>';
+      
+      // Log the final transcript and run emotion analysis
+      console.log("=== FINAL RECORDING ===");
+      console.log("Question:", currentQuestion);
+      console.log("Recorded text:", finalTranscript || "No speech detected");
+      console.log("========================");
+      
+      // Check if transcript is empty and we haven't restarted yet
+      if ((!finalTranscript || !finalTranscript.trim()) && !hasRestarted) {
+        hasRestarted = true;
+        console.log("Empty recording detected, restarting once...");
+        
+        // Reset variables for restart
+        finalTranscript = '';
+        hasSpeechDetected = false;
+        
+        setTimeout(() => {
+          document.getElementById('statusText').innerHTML = 
+            '<span class="blinking-text">No speech detected - trying again</span><span class="loading-dots"></span>';
+          
+          setTimeout(() => {
+            startVoiceRecording();
+          }, 2000);
+        }, 1000);
+        return;
+      }
+      
+      // Run emotion analysis if we have text
+      if (finalTranscript && finalTranscript.trim()) {
+        setTimeout(() => {
+          console.log("Running emotion analysis...");
+          const analysis = analyzeVoice(finalTranscript.trim(), currentQuestion);
+          
+          // Update UI to show analysis complete
+          document.getElementById('statusText').innerHTML = 
+            '<span class="success-message">Emotion Analysis Complete!</span>';
+        }, 1000);
+      } else {
+        // Keep the "Recording Complete" message for 3 seconds
+        setTimeout(() => {
+          document.getElementById('statusText').innerHTML = 
+            '<span class="success-message">Analysis Complete!</span>';
+        }, 3000);
+      }
+    }
+
+    // Start voice recording
+    function startVoiceRecording() {
+      console.log("Starting voice recording...");
+      
+      if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        speechRecognition = new SpeechRecognition();
+        
+        speechRecognition.continuous = true;  // Changed to true for continuous recording
+        speechRecognition.interimResults = true;  // Changed to true to get interim results
+        speechRecognition.lang = 'en-US';
+        
+        speechRecognition.onstart = function() {
+          console.log("🎙️ Voice recording started - waiting for speech...");
+          isRecording = true;
+          document.getElementById('statusText').innerHTML = 
+            '<span class="recording-indicator"></span>Listening... Start speaking to begin recording';
+        };
+        
+        speechRecognition.onresult = function(event) {
+          let interimTranscript = '';
+          
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            
+            if (event.results[i].isFinal) {
+              finalTranscript += transcript;
+              console.log("✅ Final transcript added:", transcript);
+            } else {
+              interimTranscript += transcript;
+            }
+          }
+          
+          // Start recording when first speech is detected
+          if ((finalTranscript.trim() || interimTranscript.trim()) && !recordingStarted) {
+            console.log("🗣️ Speech detected - starting pause-based recording");
+            hasSpeechDetected = true;
+            startSilenceDetection();
+          }
+          
+          // Reset silence timer when new speech is detected (only if recording has started)
+          if (recordingStarted && (finalTranscript.trim() || interimTranscript.trim())) {
+            resetSilenceTimer();
+          }
+          
+          console.log("Current transcript:", finalTranscript + interimTranscript);
+        };
+        
+        speechRecognition.onerror = function(event) {
+          console.error("❌ Speech recognition error:", event.error);
+          
+          // Don't show error if recording was intentionally stopped
+          if (!recordingStarted) {
+            document.getElementById('statusText').innerHTML = 
+              'Voice recognition failed. Please try again.';
+          }
+        };
+        
+        speechRecognition.onend = function() {
+          console.log("Speech recognition ended");
+          
+          // If we haven't detected speech yet, restart recognition
+          if (isRecording && !recordingStarted) {
+            console.log("🔄 Restarting speech recognition - waiting for speech...");
+            speechRecognition.start();
+          }
+          // If we were recording and haven't stopped yet, the silence timer will handle stopping
+        };
+        
+        speechRecognition.start();
+      } else {
+        console.error("❌ Speech recognition not supported");
+        document.getElementById('statusText').innerHTML = 
+          'Voice recognition not supported in this browser';
+      }
+    }
+
+    // Initialize voice analysis
+    async function initializeVoiceAnalysis() {
+      console.log("🚀 Initializing voice analysis...");
+      
+      // Initialize sentiment analyzer first
+      document.getElementById('statusText').innerHTML = 
+        '<span class="blinking-text">Loading emotion analysis</span><span class="loading-dots"></span>';
+      
+      await initializeSentimentAnalyzer();
+      
+      // Load questions
+      questionLoader = new QuestionLoader();
+      await questionLoader.loadQuestions();
+      
+      // Get a random question
+      currentQuestion = questionLoader.getRandomQuestion();
+      
+      setTimeout(() => {
+        // Display the question
+        displayQuestion(currentQuestion);
+        
+        document.getElementById('statusText').innerHTML = 
+          '<span class="blinking-text">Ready to record</span><span class="loading-dots"></span>';
+        
+        // Wait 5 seconds before starting recording
+        setTimeout(() => {
+          // Show countdown
+          let countdown = 5;
+          const countdownInterval = setInterval(() => {
+            document.getElementById('statusText').innerHTML = 
+              `<span class="blinking-text">Recording starts in ${countdown}...</span>`;
+            countdown--;
+            
+            if (countdown < 0) {
+              clearInterval(countdownInterval);
+              startVoiceRecording();
+            }
+          }, 1000);
+        }, 1000);
+      }, 2000);
+    }
+
+    // Start when page loads
+    window.addEventListener('load', function() {
+      initializeVoiceAnalysis();
+    });
+  </script>
+</body>
+</html>
