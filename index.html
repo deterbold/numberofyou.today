@@ -67,6 +67,47 @@
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     }
 
+    .wait-message {
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 20px;
+      padding: 2rem;
+      margin-top: 2rem;
+      backdrop-filter: blur(10px);
+      text-align: center;
+      display: none;
+    }
+
+    .countdown {
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
+      font-weight: bold;
+      margin: 1rem 0;
+      color: #ffa726;
+    }
+
+    .bypass-button {
+      position: fixed;
+      bottom: 10px;
+      left: 10px;
+      width: 30px;
+      height: 30px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      cursor: pointer;
+      opacity: 0.3;
+      transition: opacity 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      z-index: 1000;
+    }
+
+    .bypass-button:hover {
+      opacity: 0.8;
+    }
+
     /* Map styles */
     #mapContainer {
       position: fixed;
@@ -152,6 +193,19 @@
   <div class="container" id="mainContainer">
     <h1>Number of You: Today</h1>
     <button class="start-button" id="startButton">Start</button>
+    
+    <!-- Wait Message (hidden by default) -->
+    <div class="wait-message" id="waitMessage">
+      <h2>You've already discovered your Number of You today!</h2>
+      <p>Come back tomorrow to generate a new number.</p>
+      <div class="countdown" id="countdown">23:59:59</div>
+      <p style="opacity: 0.7;">Your number resets at midnight.</p>
+    </div>
+  </div>
+
+  <!-- Bypass Button for Testing (very discrete) -->
+  <div class="bypass-button" id="bypassButton" title="Bypass wait (testing only)">
+    ⚡
   </div>
 
   <!-- Map container -->
@@ -499,9 +553,107 @@
       }, 500);
     }
 
+    // Check if user can access the experience today
+    function canAccessToday() {
+      const lastAccessDate = localStorage.getItem('lastAccessDate');
+      const today = new Date().toDateString();
+      const bypassEnabled = localStorage.getItem('bypassWait') === 'true';
+      
+      console.log('Access check:', {
+        lastAccessDate,
+        today,
+        bypassEnabled,
+        isNewDay: lastAccessDate !== today
+      });
+      
+      if (!lastAccessDate) {
+        // First time visitor
+        console.log('First time visitor - allowing access');
+        return true;
+      }
+      
+      if (lastAccessDate !== today) {
+        // New day, can access
+        console.log('New day detected - allowing access');
+        return true;
+      }
+      
+      // Same day, check if bypass is enabled
+      console.log('Same day access attempt - checking bypass:', bypassEnabled);
+      return bypassEnabled;
+    }
+
+    // Calculate time until midnight
+    function getTimeUntilMidnight() {
+      const now = new Date();
+      const midnight = new Date(now);
+      midnight.setDate(midnight.getDate() + 1); // Next day
+      midnight.setHours(0, 0, 0, 0); // Set to midnight
+      
+      const diff = midnight.getTime() - now.getTime();
+      
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      
+      console.log(`Time until midnight: ${hours}h ${minutes}m ${seconds}s`);
+      
+      return {
+        hours: hours,
+        minutes: minutes,
+        seconds: seconds,
+        formatted: `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+      };
+    }
+
+    // Update countdown timer
+    function updateCountdown() {
+      const time = getTimeUntilMidnight();
+      const countdownElement = document.getElementById('countdown');
+      if (countdownElement) {
+        countdownElement.textContent = time.formatted;
+      }
+    }
+
+    // Show wait message and start countdown
+    function showWaitMessage() {
+      document.getElementById('startButton').style.display = 'none';
+      document.getElementById('waitMessage').style.display = 'block';
+      
+      // Update countdown immediately
+      updateCountdown();
+      
+      // Update countdown every second
+      const countdownInterval = setInterval(() => {
+        updateCountdown();
+        
+        // Check if it's a new day (past midnight)
+        const time = getTimeUntilMidnight();
+        if (time.hours === 23 && time.minutes === 59 && time.seconds <= 1) {
+          // About to hit midnight, reset in next iteration
+          setTimeout(() => {
+            clearInterval(countdownInterval);
+            localStorage.removeItem('lastAccessDate');
+            localStorage.removeItem('bypassWait');
+            location.reload();
+          }, 2000);
+        }
+      }, 1000);
+    }
+
     // Initialize data collection on page load
     async function initializeData() {
       console.log("Initializing data collection...");
+      
+      // Check if user can access today
+      if (!canAccessToday()) {
+        console.log("User already accessed today, showing wait message");
+        showWaitMessage();
+        return;
+      }
+      
+      // Mark today as accessed
+      localStorage.setItem('lastAccessDate', new Date().toDateString());
       
       // Get current date with full timestamp
       currentDate = getDateWithTimestamp();
@@ -551,6 +703,13 @@
         console.error('Cannot show map: No location data available');
         alert('Location is required to continue. Please refresh and allow location access.');
       }
+    });
+
+    // Bypass button for testing
+    document.getElementById('bypassButton').addEventListener('click', function() {
+      console.log('Bypass button clicked - enabling testing mode');
+      localStorage.setItem('bypassWait', 'true');
+      location.reload();
     });
 
     // Handle window resize for responsive behavior

@@ -1,0 +1,126 @@
+{
+  "lastUpdated": "2025-10-06T19:45:25.217Z",
+  "totalSessions": 3,
+  "sessions": [
+    {
+      "timestamp": "2025-10-06T19:35:13.656Z",
+      "randomNumber": 122,
+      "age": null,
+      "gender": "Not available",
+      "mood": "Not available",
+      "sentimentScore": 0.5,
+      "humor": "phlegmatic",
+      "speechText": "lunes a member to El Domingo and cuatro la tardes Trek me el martes me weaponsia martes miéricles Santiago he still con Los Angeles",
+      "latitude": null,
+      "longitude": null,
+      "placeName": "Not available",
+      "city": "Not available",
+      "colorRGB": {
+        "red": 58,
+        "green": 96,
+        "blue": 69
+      },
+      "baseColorRGB": {
+        "red": 76,
+        "green": 114,
+        "blue": 87
+      },
+      "randomVariation": -18,
+      "brightness": 82,
+      "dataCompleteness": {
+        "camera": true,
+        "voice": true,
+        "location": true
+      },
+      "timeData": {
+        "hour": 21,
+        "dayOfWeek": "Monday",
+        "fullDateTime": "06/10/2025, 21:35:13"
+      },
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "screenResolution": "1710x1112",
+      "timezone": "Europe/Copenhagen",
+      "id": "session_1759779313659_khzm3gi2x"
+    },
+    {
+      "timestamp": "2025-10-06T19:39:03.144Z",
+      "randomNumber": 61,
+      "age": null,
+      "gender": "Not available",
+      "mood": "Not available",
+      "sentimentScore": 0.5,
+      "humor": "phlegmatic",
+      "speechText": "lunes a member to El Domingo and cuatro la tardes Trek me el martes me weaponsia martes miéricles Santiago he still con Los Angeles",
+      "latitude": null,
+      "longitude": null,
+      "placeName": "Not available",
+      "city": "Not available",
+      "colorRGB": {
+        "red": 77,
+        "green": 115,
+        "blue": 88
+      },
+      "baseColorRGB": {
+        "red": 76,
+        "green": 114,
+        "blue": 87
+      },
+      "randomVariation": 1,
+      "brightness": 101,
+      "dataCompleteness": {
+        "camera": true,
+        "voice": true,
+        "location": true
+      },
+      "timeData": {
+        "hour": 21,
+        "dayOfWeek": "Monday",
+        "fullDateTime": "06/10/2025, 21:39:03"
+      },
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "screenResolution": "1710x1112",
+      "timezone": "Europe/Copenhagen",
+      "id": "session_1759779543150_hbhws9jj0"
+    },
+    {
+      "timestamp": "2025-10-06T19:45:25.214Z",
+      "randomNumber": 112,
+      "age": null,
+      "gender": "Not available",
+      "mood": "Not available",
+      "sentimentScore": 0.5,
+      "humor": "phlegmatic",
+      "speechText": "yeah",
+      "latitude": null,
+      "longitude": null,
+      "placeName": "Not available",
+      "city": "Not available",
+      "colorRGB": {
+        "red": 88,
+        "green": 126,
+        "blue": 99
+      },
+      "baseColorRGB": {
+        "red": 76,
+        "green": 114,
+        "blue": 87
+      },
+      "randomVariation": 12,
+      "brightness": 112,
+      "dataCompleteness": {
+        "camera": true,
+        "voice": true,
+        "location": true
+      },
+      "timeData": {
+        "hour": 21,
+        "dayOfWeek": "Monday",
+        "fullDateTime": "06/10/2025, 21:45:25"
+      },
+      "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+      "screenResolution": "1710x1112",
+      "timezone": "Europe/Copenhagen",
+      "id": "session_1759779925217_knph6xfa7"
+    }
+  ]
+}

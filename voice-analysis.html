@@ -404,15 +404,45 @@
           console.log("Running emotion analysis...");
           const analysis = analyzeVoice(finalTranscript.trim(), currentQuestion);
           
+          // Save analysis data to localStorage for closing page
+          localStorage.setItem('speechText', analysis.text);
+          localStorage.setItem('sentimentScore', analysis.sentimentScore);
+          localStorage.setItem('humor', analysis.humor);
+          localStorage.setItem('voiceQuestion', analysis.question);
+          localStorage.setItem('emotionCategory', analysis.emotion.category);
+          localStorage.setItem('emotionConfidence', analysis.confidence);
+          localStorage.setItem('voiceDataMissing', 'false');
+          
           // Update UI to show analysis complete
           document.getElementById('statusText').innerHTML = 
             '<span class="success-message">Emotion Analysis Complete!</span>';
+          
+          // Redirect to closing page after 3 seconds
+          setTimeout(() => {
+            console.log("Redirecting to closing page...");
+            window.location.href = 'closing-page.html';
+          }, 3000);
         }, 1000);
       } else {
         // Keep the "Recording Complete" message for 3 seconds
         setTimeout(() => {
           document.getElementById('statusText').innerHTML = 
             '<span class="success-message">Analysis Complete!</span>';
+          
+          // Save empty analysis and redirect anyway
+          localStorage.setItem('speechText', 'No speech detected');
+          localStorage.setItem('sentimentScore', '0.5');
+          localStorage.setItem('humor', 'neutral');
+          localStorage.setItem('voiceQuestion', currentQuestion || 'No question');
+          localStorage.setItem('emotionCategory', 'neutral');
+          localStorage.setItem('emotionConfidence', '0');
+          localStorage.setItem('voiceDataMissing', 'true');
+          
+          // Redirect to closing page after 3 seconds
+          setTimeout(() => {
+            console.log("Redirecting to closing page...");
+            window.location.href = 'closing-page.html';
+          }, 3000);
         }, 3000);
       }
     }
@@ -491,6 +521,20 @@
         console.error("❌ Speech recognition not supported");
         document.getElementById('statusText').innerHTML = 
           'Voice recognition not supported in this browser';
+        
+        // Set default voice data and redirect
+        localStorage.setItem('speechText', 'Voice recognition not supported');
+        localStorage.setItem('sentimentScore', '0.5');
+        localStorage.setItem('humor', 'neutral');
+        localStorage.setItem('voiceQuestion', currentQuestion || 'No question');
+        localStorage.setItem('emotionCategory', 'neutral');
+        localStorage.setItem('emotionConfidence', '0');
+        localStorage.setItem('voiceDataMissing', 'true');
+        
+        setTimeout(() => {
+          console.log("Redirecting to closing page...");
+          window.location.href = 'closing-page.html';
+        }, 3000);
       }
     }
 

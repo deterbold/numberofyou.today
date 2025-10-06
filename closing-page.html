@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Number of You: Today</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Futura', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: rgb(128, 128, 128); /* Default gray, will be updated by JavaScript */
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      overflow: hidden;
+      transition: background-color 1s ease;
+    }
+
+    .container {
+      text-align: center;
+      max-width: 90%;
+      padding: 2rem;
+    }
+
+    .header-text {
+      font-size: clamp(2rem, 5vw, 4rem);
+      font-weight: 300;
+      margin-bottom: 3rem;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      letter-spacing: 0.05em;
+      opacity: 0.9;
+    }
+
+    .disclaimer {
+      font-size: clamp(1rem, 2.5vw, 1.5rem);
+      font-weight: 300;
+      margin-top: 3rem;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+      opacity: 0.8;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 15px;
+      padding: 1.5rem;
+      backdrop-filter: blur(10px);
+      display: none; /* Hidden by default */
+    }
+
+    .dashboard-button {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      width: 60px;
+      height: 60px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      text-decoration: none;
+      color: inherit;
+      z-index: 1000;
+    }
+
+    .dashboard-button:hover {
+      background: rgba(255, 255, 255, 0.25);
+      border-color: rgba(255, 255, 255, 0.6);
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    }
+
+    .dashboard-button:active {
+      transform: translateY(0) scale(1);
+    }
+
+    .dashboard-icon {
+      width: 24px;
+      height: 24px;
+      fill: currentColor;
+      opacity: 0.8;
+    }
+
+    .dashboard-button:hover .dashboard-icon {
+      opacity: 1;
+    }
+
+    @media (max-width: 768px) {
+      .dashboard-button {
+        bottom: 1.5rem;
+        right: 1.5rem;
+        width: 50px;
+        height: 50px;
+      }
+      
+      .dashboard-icon {
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    .number-container {
+      position: relative;
+      display: inline-block;
+    }
+
+    .number {
+      font-size: clamp(8rem, 20vw, 20rem);
+      font-weight: bold;
+      text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.4);
+      line-height: 1;
+      animation: pulse 2s ease-in-out infinite;
+      display: inline-block;
+    }
+
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+      50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+      }
+    }
+
+    .glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+      border-radius: 50%;
+      animation: glow 3s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+
+    @keyframes glow {
+      0% {
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+        transform: translate(-50%, -50%) scale(0.8);
+      }
+      100% {
+        box-shadow: 0 0 60px rgba(255, 255, 255, 0.6);
+        transform: translate(-50%, -50%) scale(1.2);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+      }
+      
+      .header-text {
+        margin-bottom: 2rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .header-text {
+        margin-bottom: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-text">Your Number of You Today is:</div>
+    <div class="number-container">
+      <div class="glow"></div>
+      <div class="number" id="randomNumber">0</div>
+    </div>
+    <div class="disclaimer" id="disclaimer">
+      Disclaimer: Not enough data available for producing an accurate Number of You
+    </div>
+  </div>
+
+  <!-- Dashboard Button -->
+  <a href="dashboard.html" class="dashboard-button" title="View Analytics Dashboard">
+    <svg class="dashboard-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+    </svg>
+  </a>
+
+  <script>
+    // Generate random number with range limiting based on missing data
+    function generateRandomNumber() {
+      // Check which data types are missing
+      const cameraDataMissing = localStorage.getItem('cameraDataMissing') === 'true';
+      const voiceDataMissing = localStorage.getItem('voiceDataMissing') === 'true';
+      const locationDataMissing = localStorage.getItem('locationDataMissing') === 'true';
+      
+      // Count missing data types
+      let missingDataCount = 0;
+      if (cameraDataMissing) missingDataCount++;
+      if (voiceDataMissing) missingDataCount++;
+      if (locationDataMissing) missingDataCount++;
+      
+      // Determine range based on missing data
+      let maxRange = 256; // Full range (0-255)
+      
+      if (missingDataCount === 1) {
+        maxRange = 192; // Limit to 0-191 if one data type is missing
+      } else if (missingDataCount === 2) {
+        maxRange = 128; // Limit to 0-127 if two data types are missing
+      } else if (missingDataCount === 3) {
+        maxRange = 64;  // Limit to 0-63 if all data types are missing
+      }
+      
+      console.log("Data missing count:", missingDataCount);
+      console.log("Random number range: 0-" + (maxRange - 1));
+      console.log("Camera data missing:", cameraDataMissing);
+      console.log("Voice data missing:", voiceDataMissing);
+      console.log("Location data missing:", locationDataMissing);
+      
+      return Math.floor(Math.random() * maxRange);
+    }
+
+    // Generate RGB color based on data analysis
+    function generateRGBColor() {
+      let red = 128;   // Default for camera/face data
+      let green = 128; // Default for voice data  
+      let blue = 128;  // Default for location data
+      
+      // RED COMPONENT - Based on camera/face data
+      const cameraDataMissing = localStorage.getItem('cameraDataMissing') === 'true';
+      if (!cameraDataMissing) {
+        const age = parseInt(localStorage.getItem('age')) || 30;
+        const gender = localStorage.getItem('gender') || 'unknown';
+        const mood = localStorage.getItem('mood') || 'neutral';
+        
+        // Base red on age (0-100 mapped to 0-255)
+        red = Math.min(255, Math.max(0, Math.floor((age / 100) * 255)));
+        
+        // Modify based on gender
+        if (gender === 'male') {
+          red = Math.min(255, red + 30);
+        } else if (gender === 'female') {
+          red = Math.max(0, red - 30);
+        }
+        
+        // Modify based on mood
+        const moodMultipliers = {
+          'happy': 1.2,
+          'angry': 1.5,
+          'sad': 0.7,
+          'surprised': 1.1,
+          'neutral': 1.0,
+          'fearful': 0.8,
+          'disgusted': 0.9
+        };
+        red = Math.min(255, Math.floor(red * (moodMultipliers[mood] || 1.0)));
+      }
+      
+      // GREEN COMPONENT - Based on voice/sentiment data
+      const voiceDataMissing = localStorage.getItem('voiceDataMissing') === 'true';
+      if (!voiceDataMissing) {
+        const sentimentScore = parseFloat(localStorage.getItem('sentimentScore')) || 0.5;
+        const humor = localStorage.getItem('humor') || 'neutral';
+        
+        // Base green on sentiment score (0.0-1.0 mapped to 0-255)
+        green = Math.floor(sentimentScore * 255);
+        
+        // Modify based on humor type
+        const humorMultipliers = {
+          'sanguine': 1.3,    // Optimistic - brighter green
+          'choleric': 1.1,    // Energetic - slightly brighter
+          'melancholic': 0.6, // Sad - darker green
+          'phlegmatic': 0.9,  // Calm - slightly darker
+          'neutral': 1.0
+        };
+        green = Math.min(255, Math.floor(green * (humorMultipliers[humor] || 1.0)));
+      }
+      
+      // BLUE COMPONENT - Based on location and time data
+      const locationDataMissing = localStorage.getItem('locationDataMissing') === 'true';
+      if (!locationDataMissing) {
+        const latitude = parseFloat(localStorage.getItem('latitude')) || 0;
+        const longitude = parseFloat(localStorage.getItem('longitude')) || 0;
+        
+        // Base blue on latitude (-90 to 90 mapped to 0-255)
+        blue = Math.floor(((latitude + 90) / 180) * 255);
+        
+        // Modify based on longitude (-180 to 180)
+        const longitudeInfluence = Math.floor(((longitude + 180) / 360) * 100);
+        blue = Math.min(255, Math.max(0, blue + longitudeInfluence - 50));
+        
+        // Modify based on time of day
+        const currentHour = new Date().getHours();
+        if (currentHour >= 6 && currentHour < 12) {
+          // Morning - brighter blue
+          blue = Math.min(255, blue + 40);
+        } else if (currentHour >= 18 || currentHour < 6) {
+          // Night - darker blue
+          blue = Math.max(0, blue - 40);
+        }
+      }
+      
+      return { red, green, blue };
+    }
+
+    // Set background color based on RGB analysis
+    function setBackgroundColor(randomNumber) {
+      // Generate RGB based on data analysis
+      const rgbColor = generateRGBColor();
+      
+      // Use random number to add some variation/noise to the color
+      const variation = randomNumber % 40 - 20; // -20 to +19 variation
+      
+      const finalRed = Math.min(255, Math.max(0, rgbColor.red + variation));
+      const finalGreen = Math.min(255, Math.max(0, rgbColor.green + variation));
+      const finalBlue = Math.min(255, Math.max(0, rgbColor.blue + variation));
+      
+      const backgroundColor = `rgb(${finalRed}, ${finalGreen}, ${finalBlue})`;
+      
+      // Apply background color with smooth transition
+      document.body.style.backgroundColor = backgroundColor;
+      
+      // Calculate brightness for text contrast (using luminance formula)
+      const brightness = (finalRed * 0.299 + finalGreen * 0.587 + finalBlue * 0.114);
+      const textColor = brightness > 128 ? 'black' : 'white';
+      document.body.style.color = textColor;
+      
+      console.log("🎨 RGB COLOR BREAKDOWN:");
+      console.log("Base RGB from data:", `rgb(${rgbColor.red}, ${rgbColor.green}, ${rgbColor.blue})`);
+      console.log("Random variation applied:", variation);
+      console.log("Final background color:", backgroundColor);
+      console.log("Text color:", textColor);
+      console.log("Brightness value:", Math.round(brightness));
+      
+      return { 
+        backgroundColor, 
+        textColor, 
+        baseRGB: rgbColor, 
+        finalRGB: { red: finalRed, green: finalGreen, blue: finalBlue },
+        brightness,
+        variation
+      };
+    }
+
+    // Get current time data
+    function getCurrentTimeData() {
+      const now = new Date();
+      return {
+        timestamp: now.getTime(),
+        dateString: now.toDateString(),
+        timeString: now.toLocaleTimeString(),
+        isoString: now.toISOString(),
+        hour: now.getHours(),
+        minute: now.getMinutes(),
+        second: now.getSeconds(),
+        dayOfWeek: now.toLocaleDateString('en-US', { weekday: 'long' }),
+        fullDateTime: now.toLocaleString()
+      };
+    }
+
+    // Retrieve and log analysis results
+    function logAnalysisResults() {
+      console.log("=== NUMBER OF YOU: TODAY - ANALYSIS RESULTS ===");
+      
+      // Time data
+      const timeData = getCurrentTimeData();
+      console.log("\n📅 TIME ANALYSIS:");
+      console.log("Current Date:", timeData.dateString);
+      console.log("Current Time:", timeData.timeString);
+      console.log("Day of Week:", timeData.dayOfWeek);
+      console.log("Full DateTime:", timeData.fullDateTime);
+      console.log("Timestamp:", timeData.timestamp);
+      
+      // Location data from localStorage or URL parameters
+      console.log("\n📍 LOCATION ANALYSIS:");
+      const locationData = {
+        latitude: localStorage.getItem('latitude') || 'Not available',
+        longitude: localStorage.getItem('longitude') || 'Not available',
+        placeName: localStorage.getItem('currentPlace') || 'Not available',
+        city: localStorage.getItem('city') || 'Not available'
+      };
+      console.log("Latitude:", locationData.latitude);
+      console.log("Longitude:", locationData.longitude);
+      console.log("Place Name:", locationData.placeName);
+      console.log("City:", locationData.city);
+      
+      // Face analysis data
+      console.log("\n👤 FACE ANALYSIS:");
+      const faceData = {
+        age: localStorage.getItem('age') || 'Not available',
+        gender: localStorage.getItem('gender') || 'Not available',
+        mood: localStorage.getItem('mood') || 'Not available'
+      };
+      console.log("Estimated Age:", faceData.age);
+      console.log("Gender:", faceData.gender);
+      console.log("Detected Mood:", faceData.mood);
+      
+      // Voice/Speech analysis data
+      console.log("\n🎤 VOICE ANALYSIS:");
+      const voiceData = {
+        humor: localStorage.getItem('humor') || 'Not available',
+        speechText: localStorage.getItem('speechText') || 'Not available',
+        sentimentScore: localStorage.getItem('sentimentScore') || 'Not available'
+      };
+      console.log("Humor Classification:", voiceData.humor);
+      console.log("Speech Text:", voiceData.speechText);
+      console.log("Sentiment Score:", voiceData.sentimentScore);
+      
+      // Previous Number of You (if any)
+      console.log("\n🔢 PREVIOUS NUMBER:");
+      const previousNumber = localStorage.getItem('numberOfYou');
+      console.log("Previous Number of You:", previousNumber || 'None (first visit)');
+      
+      console.log("\n=== END ANALYSIS RESULTS ===\n");
+      
+      return {
+        time: timeData,
+        location: locationData,
+        face: faceData,
+        voice: voiceData,
+        previousNumber: previousNumber
+      };
+    }
+
+    // Send data to server for permanent storage
+    async function saveDataToServer(analysisResults, randomNumber, colorInfo) {
+      const sessionData = {
+        timestamp: new Date().toISOString(),
+        randomNumber: randomNumber,
+        age: parseInt(analysisResults.face.age) || null,
+        gender: analysisResults.face.gender || null,
+        mood: analysisResults.face.mood || null,
+        sentimentScore: parseFloat(analysisResults.voice.sentimentScore) || null,
+        humor: analysisResults.voice.humor || null,
+        speechText: analysisResults.voice.speechText || null,
+        latitude: parseFloat(analysisResults.location.latitude) || null,
+        longitude: parseFloat(analysisResults.location.longitude) || null,
+        placeName: analysisResults.location.placeName || null,
+        city: analysisResults.location.city || null,
+        colorRGB: {
+          red: colorInfo.finalRGB.red,
+          green: colorInfo.finalRGB.green,
+          blue: colorInfo.finalRGB.blue
+        },
+        baseColorRGB: {
+          red: colorInfo.baseRGB.red,
+          green: colorInfo.baseRGB.green,
+          blue: colorInfo.baseRGB.blue
+        },
+        randomVariation: colorInfo.variation,
+        brightness: Math.round(colorInfo.brightness),
+        dataCompleteness: {
+          camera: localStorage.getItem('cameraDataMissing') !== 'true',
+          voice: localStorage.getItem('voiceDataMissing') !== 'true',
+          location: localStorage.getItem('locationDataMissing') !== 'true'
+        },
+        timeData: {
+          hour: analysisResults.time.hour,
+          dayOfWeek: analysisResults.time.dayOfWeek,
+          fullDateTime: analysisResults.time.fullDateTime
+        },
+        userAgent: navigator.userAgent,
+        screenResolution: `${screen.width}x${screen.height}`,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      };
+
+      try {
+        console.log("💾 Saving data to server...", sessionData);
+        
+        const response = await fetch('save-data.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(sessionData)
+        });
+
+        const result = await response.json();
+        
+        if (response.ok && result.success) {
+          console.log("✅ Data saved successfully!");
+          console.log("Session ID:", result.sessionId);
+          console.log("Total sessions:", result.totalSessions);
+          return result;
+        } else {
+          console.error("❌ Failed to save data:", result.error || 'Unknown error');
+          return null;
+        }
+      } catch (error) {
+        console.error("❌ Error saving data to server:", error);
+        return null;
+      }
+    }
+
+    // Initialize the page
+    function initialize() {
+      // Check for missing data and show disclaimer if needed
+      const cameraDataMissing = localStorage.getItem('cameraDataMissing') === 'true';
+      const voiceDataMissing = localStorage.getItem('voiceDataMissing') === 'true';
+      const locationDataMissing = localStorage.getItem('locationDataMissing') === 'true';
+      
+      const hasAnyMissingData = cameraDataMissing || voiceDataMissing || locationDataMissing;
+      
+      if (hasAnyMissingData) {
+        document.getElementById('disclaimer').style.display = 'block';
+        console.log("⚠️ DISCLAIMER SHOWN: Some data types are missing");
+      }
+      
+      // Generate and display random number with appropriate range
+      const randomNumber = generateRandomNumber();
+      document.getElementById('randomNumber').textContent = randomNumber;
+      
+      // Set background color based on the random number
+      const colorInfo = setBackgroundColor(randomNumber);
+      
+      // Log all analysis results to console
+      const analysisResults = logAnalysisResults();
+      
+      // Also log the new random number and detailed color info
+      console.log("🎯 NEW RANDOM NUMBER GENERATED:", randomNumber);
+      console.log("🎨 DETAILED COLOR ANALYSIS:");
+      console.log("RED (Face Data): R=" + colorInfo.baseRGB.red + " → Final R=" + colorInfo.finalRGB.red);
+      console.log("GREEN (Voice Data): G=" + colorInfo.baseRGB.green + " → Final G=" + colorInfo.finalRGB.green);
+      console.log("BLUE (Location Data): B=" + colorInfo.baseRGB.blue + " → Final B=" + colorInfo.finalRGB.blue);
+      console.log("Random Variation Applied:", colorInfo.variation);
+      console.log("Final Background Color:", colorInfo.backgroundColor);
+      console.log("Text Color:", colorInfo.textColor);
+      console.log("Overall Brightness:", Math.round(colorInfo.brightness));
+      
+      // Save data to server for permanent storage and analytics
+      saveDataToServer(analysisResults, randomNumber, colorInfo);
+      
+      // Save the new number to localStorage for potential future reference
+      localStorage.setItem('todaysRandomNumber', randomNumber);
+      localStorage.setItem('lastGeneratedDate', new Date().toDateString());
+    }
+
+    // Start when page loads
+    window.addEventListener('load', initialize);
+  </script>
+</body>
+</html>

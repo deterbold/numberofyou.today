@@ -1,7 +1,7 @@
 //**VARIABLES
 
 //Variables for Face API
-const model_url = '/models';
+const model_url = '/number_of_you/models';
 let faceDrawings = [];
 let capture;
 let input;
@@ -173,6 +173,7 @@ function getBasicDataScene()
   .then(position => geolocationData(position))
   .catch(error => {
     console.error("Error getting geolocation:", error);
+    setDefaultLocationData();
   });
   
 }
@@ -350,6 +351,22 @@ function getDate()
 }
 
 //GEOLOCATION FUNCTIONS
+function setDefaultLocationData()
+{
+  console.log("Setting default location data - no location access");
+  latd = 0; // Default latitude
+  lngo = 0; // Default longitude
+  currentPlace = "Location unavailable";
+  localStorage.setItem('latitude', latd);
+  localStorage.setItem('longitude', lngo);
+  localStorage.setItem('currentPlace', currentPlace);
+  localStorage.setItem('locationDataMissing', 'true');
+  console.log('Default location data set: lat=' + latd + ', lng=' + lngo + ', place=' + currentPlace);
+  
+  // Continue to camera scene after setting defaults
+  setTimeout(cameraScene, 1000);
+}
+
 function geolocationData(position) 
 {
   // Process the geolocation data here
@@ -359,6 +376,10 @@ function geolocationData(position)
   if(latd && lngo) 
   {
     console.log("lat: " + latd + " lng: " + lngo);
+    // Save location data for the closing page
+    localStorage.setItem('latitude', latd);
+    localStorage.setItem('longitude', lngo);
+    localStorage.setItem('locationDataMissing', 'false');
   } 
   const options = 
   {
@@ -375,6 +396,8 @@ function geolocationData(position)
   .then(address => {
     console.log("Reverse geocoding result:", address);
     currentPlace = address;
+    // Save place name for the closing page
+    localStorage.setItem('currentPlace', address);
   })
   .catch(error => {
     console.error("Reverse geocoding error:", error);
@@ -392,12 +415,34 @@ function faceRead()
   faceapi.detectAllFaces(input).withAgeAndGender().withFaceExpressions().then((data) => 
     {
       showFaceDetectionData(data);
+    })
+    .catch((error) => {
+      console.error("Face detection failed:", error);
+      setDefaultFaceData();
     });
+}
+
+function setDefaultFaceData()
+{
+  console.log("Setting default face data - no camera access or face detection failed");
+  age = 30; // Default age
+  gender = 'unknown'; // Default gender
+  mood = 'neutral'; // Default mood
+  localStorage.setItem('cameraDataMissing', 'true');
+  console.log('Default face data set: age=' + age + ', gender=' + gender + ', mood=' + mood);
 }
 
 function showFaceDetectionData(data)
 {
   faceDrawings = data;
+  
+  // Check if face was detected
+  if (!data || data.length === 0) {
+    console.log("No face detected in image");
+    setDefaultFaceData();
+    return;
+  }
+  
   console.log('age ' + faceDrawings[0].age);
   console.log('gender ' + faceDrawings[0].gender);
   age = floor(faceDrawings[0].age);
@@ -418,7 +463,7 @@ function showFaceDetectionData(data)
   console.log('mood ' + highestString)
   mood = highestString;
   console.log(age + ' ' + gender + ' ' + mood);
-
+  localStorage.setItem('cameraDataMissing', 'false');
 }
 
 // **SPEECH RECOGNITION
@@ -439,7 +484,15 @@ function speechReconEnded()
 {
   console.log("speechReconEnded called");
   getSentiment(speechRec.resultString);
-  setTimeout(endScene, 2000);
+  
+  // Save speech text for the closing page
+  localStorage.setItem('speechText', speechRec.resultString);
+  
+  // Wait 3 seconds then redirect to closing page
+  setTimeout(() => {
+    console.log("Redirecting to closing page...");
+    window.location.href = 'closing-page.html';
+  }, 3000);
 }
 
 // **SENTIMENT ANALYSIS
@@ -450,6 +503,9 @@ function getSentiment(result)
   console.log(prediction);
 
   sentimentResult = prediction.score;
+  
+  // Save sentiment score for the closing page
+  localStorage.setItem('sentimentScore', sentimentResult);
   
   // a switch statement that divides the sentiment score into 5 categories
   switch(true)
