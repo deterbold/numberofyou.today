@@ -67,21 +67,31 @@ function preload()
 //************************************************************************************************************************************************************************************
 //************************************************************************************************************************************************************************************
 
-function setup() 
+function setup()
 {
   //video data capture
-  capture = createCapture(VIDEO);
-  capture.id("video_element");
-  input = document.getElementById('video_element');
+  try {
+    capture = createCapture(VIDEO, function() {
+      console.log('Camera capture ready');
+    }, function(err) {
+      console.error('Error creating video capture:', err);
+      setDefaultFaceData();
+    });
+    capture.id("video_element");
+    input = document.getElementById('video_element');
 
-  // Check if video capture is available
-  if (!capture || !input) {
-    console.error('Error creating video capture');
-    // Handle the error case
-    return;
-  }
-  capture.size(width, height);
-  capture.hide();  
+    // Check if video capture is available
+    if (!capture || !input) {
+      console.error('Error creating video capture');
+      setDefaultFaceData();
+    } else {
+      capture.size(width, height);
+      capture.hide();
+    }
+  } catch (error) {
+    console.error('Camera access error:', error);
+    setDefaultFaceData();
+  }  
 
   //UI Button
   dataButton = createButton("data");
@@ -94,13 +104,18 @@ function setup()
   dataButton.mouseClicked(dataButtonClicked);
   dataButton.hide();
 
-  //Geolocation
-   if (!navigator.geolocation) 
+  //Geolocation - check if available
+   if (!navigator.geolocation)
    {
-     // Geolocation is not available
-     // Handle the error here, e.g., display an error message
      console.error("Geolocation is not available.");
-     alert("Geolocation is not available.");
+     // Set default location data immediately
+     latd = 0;
+     lngo = 0;
+     currentPlace = "Location not available";
+     localStorage.setItem('latitude', latd);
+     localStorage.setItem('longitude', lngo);
+     localStorage.setItem('currentPlace', currentPlace);
+     localStorage.setItem('locationDataMissing', 'true');
    }
 
   //Checking if it is a new day
@@ -160,22 +175,56 @@ function getBasicDataScene()
   fill(255, 0, 0);
   textAlign(CENTER, CENTER);
   text("Getting Date and Location", windowWidth/2, windowHeight/2 - 100);
-  
+
   saveCurrentDate();
 
+  // Check if geolocation is available
+  if (!navigator.geolocation) {
+    console.error("Geolocation not available");
+    // Display error message
+    clear();
+    textSize(50);
+    fill(255, 0, 0);
+    textAlign(CENTER, CENTER);
+    text("Location access not available", windowWidth/2, windowHeight/2 - 100);
+    setDefaultLocationData();
+    return;
+  }
+
   function getCurrentPosition() {
-  
     return new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(resolve, reject);
+      // Add timeout of 5 seconds
+      const timeout = setTimeout(() => {
+        reject(new Error("Location request timeout"));
+      }, 5000);
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          clearTimeout(timeout);
+          resolve(position);
+        },
+        (error) => {
+          clearTimeout(timeout);
+          reject(error);
+        },
+        { timeout: 5000 }
+      );
     });
   }
+
   getCurrentPosition()
   .then(position => geolocationData(position))
   .catch(error => {
     console.error("Error getting geolocation:", error);
+    // Display error message
+    clear();
+    textSize(50);
+    fill(255, 0, 0);
+    textAlign(CENTER, CENTER);
+    text("Location access not allowed", windowWidth/2, windowHeight/2 - 100);
     setDefaultLocationData();
   });
-  
+
 }
 
 function cameraScene()
@@ -184,15 +233,26 @@ function cameraScene()
   console.log("Camera Scene called");
 
   background(255, 255, 255);
-  
+
   fill(255, 0, 0);
   textSize(50);
   textAlign(CENTER, CENTER);
+
+  // Check if camera is available before trying to use it
+  if (!capture || !input) {
+    console.error("Camera not available in cameraScene");
+    text("Camera access not allowed", windowWidth/2, windowHeight/2 - 100);
+    setDefaultFaceData();
+    // Continue to sound scene after 2 seconds
+    timer = setTimeout(soundScene, 2000);
+    return;
+  }
+
   text("Getting Image Data", windowWidth/2, windowHeight/2 + 100);
-  image(capture, 0, 0, width, height/2, 0, 0, 0, 0, CONTAIN); 
-  
+  image(capture, 0, 0, width, height/2, 0, 0, 0, 0, CONTAIN);
+
   faceRead();
-  
+
   timer = setTimeout(soundScene, 4000);
 }
 
@@ -206,12 +266,63 @@ function soundScene()
   textSize(50);
   textAlign(CENTER, CENTER);
   text("Say something in English about yourself today", windowWidth/2, windowHeight/2 - 100);
-  
+
+  // Check for microphone support
+  if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+    console.error("Speech recognition not supported");
+    clear();
+    background(255, 255, 255);
+    fill(255, 0, 0);
+    textSize(50);
+    textAlign(CENTER, CENTER);
+    text("Microphone access not available", windowWidth/2, windowHeight/2 - 100);
+
+    // Set default speech data
+    localStorage.setItem('speechText', 'Microphone not available');
+    localStorage.setItem('sentimentScore', '0.5');
+    localStorage.setItem('speechDataMissing', 'true');
+    humor = 'neutral';
+
+    // Skip to end scene after 2 seconds
+    setTimeout(endScene, 2000);
+    return;
+  }
+
   //speech stuff
-  speechRec = new p5.SpeechRec('en-US', gotSpeech);
-  let continuous = false;
-  let interim = false;
-  speechRec.start(continuous, interim);
+  try {
+    speechRec = new p5.SpeechRec('en-US', gotSpeech);
+    let continuous = false;
+    let interim = false;
+
+    // Add error callback
+    speechRec.onError = function(err) {
+      console.error("Speech recognition error:", err);
+      clear();
+      background(255, 255, 255);
+      fill(255, 0, 0);
+      textSize(50);
+      textAlign(CENTER, CENTER);
+      text("Microphone access not allowed", windowWidth/2, windowHeight/2 - 100);
+
+      // Set default speech data
+      localStorage.setItem('speechText', 'Microphone access denied');
+      localStorage.setItem('sentimentScore', '0.5');
+      localStorage.setItem('speechDataMissing', 'true');
+      humor = 'neutral';
+
+      // Skip to end scene after 2 seconds
+      setTimeout(endScene, 2000);
+    };
+
+    speechRec.start(continuous, interim);
+  } catch (error) {
+    console.error("Error starting speech recognition:", error);
+    // Set defaults and continue
+    localStorage.setItem('speechText', 'Speech recognition failed');
+    localStorage.setItem('sentimentScore', '0.5');
+    localStorage.setItem('speechDataMissing', 'true');
+    humor = 'neutral';
+  }
 
   setTimeout(endScene, 15000);
 }
@@ -362,9 +473,9 @@ function setDefaultLocationData()
   localStorage.setItem('currentPlace', currentPlace);
   localStorage.setItem('locationDataMissing', 'true');
   console.log('Default location data set: lat=' + latd + ', lng=' + lngo + ', place=' + currentPlace);
-  
-  // Continue to camera scene after setting defaults
-  setTimeout(cameraScene, 1000);
+
+  // Continue to camera scene after 2 seconds to show error message
+  setTimeout(cameraScene, 2000);
 }
 
 function geolocationData(position) 

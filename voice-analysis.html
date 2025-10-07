@@ -169,7 +169,7 @@
 
   <script>
     console.log("Voice analysis page loaded");
-    
+
     // Voice analysis variables
     let speechRecognition = null;
     let isRecording = false;
@@ -184,6 +184,12 @@
     let sentimentAnalyzer = null;
     let emotionAnalysisReady = false;
     let hasRestarted = false; // Track if we've already restarted once
+
+    // Browser detection
+    function isSafari() {
+      const ua = navigator.userAgent.toLowerCase();
+      return ua.indexOf('safari') !== -1 && ua.indexOf('chrome') === -1 && ua.indexOf('chromium') === -1;
+    }
 
     // Display a question to the user
     function displayQuestion(question) {
@@ -450,15 +456,53 @@
     // Start voice recording
     function startVoiceRecording() {
       console.log("Starting voice recording...");
-      
+
+      // Check for microphone permission first
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ audio: true })
+          .then(function(stream) {
+            // Stop the stream immediately, we just needed to check permission
+            stream.getTracks().forEach(track => track.stop());
+            console.log("Microphone access granted");
+            initiateSpeechRecognition();
+          })
+          .catch(function(error) {
+            console.error("Microphone access denied:", error);
+            document.getElementById('statusText').innerHTML =
+              '<span style="color: #ff6b6b;">Microphone access not allowed</span>';
+
+            // Set default voice data
+            localStorage.setItem('speechText', 'Microphone access not allowed');
+            localStorage.setItem('sentimentScore', '0.5');
+            localStorage.setItem('humor', 'neutral');
+            localStorage.setItem('voiceQuestion', currentQuestion || 'No question');
+            localStorage.setItem('emotionCategory', 'neutral');
+            localStorage.setItem('emotionConfidence', '0');
+            localStorage.setItem('voiceDataMissing', 'true');
+
+            // Redirect after 2 seconds
+            setTimeout(() => {
+              console.log("Redirecting to closing page...");
+              window.location.href = 'closing-page.html';
+            }, 2000);
+          });
+      } else {
+        console.error("getUserMedia not supported");
+        handleMicrophoneNotSupported();
+      }
+    }
+
+    // Separate function to handle speech recognition initialization
+    function initiateSpeechRecognition() {
       if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         speechRecognition = new SpeechRecognition();
-        
+
+
         speechRecognition.continuous = true;  // Changed to true for continuous recording
         speechRecognition.interimResults = true;  // Changed to true to get interim results
         speechRecognition.lang = 'en-US';
-        
+
         speechRecognition.onstart = function() {
           console.log("🎙️ Voice recording started - waiting for speech...");
           isRecording = true;
@@ -497,10 +541,33 @@
         
         speechRecognition.onerror = function(event) {
           console.error("❌ Speech recognition error:", event.error);
-          
+
+          // Check for Safari-specific service-not-allowed error
+          if (event.error === 'service-not-allowed' && isSafari()) {
+            console.error("Safari service-not-allowed error detected");
+            document.getElementById('statusText').innerHTML =
+              '<span style="color: #ff6b6b; font-size: clamp(1.2rem, 3vw, 1.8rem);">Voice analysis not available on Safari.<br>Number of You works best on Chrome.</span>';
+
+            // Set default voice data
+            localStorage.setItem('speechText', 'Voice analysis not available on Safari');
+            localStorage.setItem('sentimentScore', '0.5');
+            localStorage.setItem('humor', 'neutral');
+            localStorage.setItem('voiceQuestion', currentQuestion || 'No question');
+            localStorage.setItem('emotionCategory', 'neutral');
+            localStorage.setItem('emotionConfidence', '0');
+            localStorage.setItem('voiceDataMissing', 'true');
+
+            // Redirect after 3 seconds
+            setTimeout(() => {
+              console.log("Redirecting to closing page...");
+              window.location.href = 'closing-page.html';
+            }, 3000);
+            return;
+          }
+
           // Don't show error if recording was intentionally stopped
           if (!recordingStarted) {
-            document.getElementById('statusText').innerHTML = 
+            document.getElementById('statusText').innerHTML =
               'Voice recognition failed. Please try again.';
           }
         };
@@ -519,23 +586,28 @@
         speechRecognition.start();
       } else {
         console.error("❌ Speech recognition not supported");
-        document.getElementById('statusText').innerHTML = 
-          'Voice recognition not supported in this browser';
-        
-        // Set default voice data and redirect
-        localStorage.setItem('speechText', 'Voice recognition not supported');
-        localStorage.setItem('sentimentScore', '0.5');
-        localStorage.setItem('humor', 'neutral');
-        localStorage.setItem('voiceQuestion', currentQuestion || 'No question');
-        localStorage.setItem('emotionCategory', 'neutral');
-        localStorage.setItem('emotionConfidence', '0');
-        localStorage.setItem('voiceDataMissing', 'true');
-        
-        setTimeout(() => {
-          console.log("Redirecting to closing page...");
-          window.location.href = 'closing-page.html';
-        }, 3000);
+        handleMicrophoneNotSupported();
       }
+    }
+
+    // Handle microphone not supported case
+    function handleMicrophoneNotSupported() {
+      document.getElementById('statusText').innerHTML =
+        '<span style="color: #ff6b6b;">Voice recognition not supported</span>';
+
+      // Set default voice data and redirect
+      localStorage.setItem('speechText', 'Voice recognition not supported');
+      localStorage.setItem('sentimentScore', '0.5');
+      localStorage.setItem('humor', 'neutral');
+      localStorage.setItem('voiceQuestion', currentQuestion || 'No question');
+      localStorage.setItem('emotionCategory', 'neutral');
+      localStorage.setItem('emotionConfidence', '0');
+      localStorage.setItem('voiceDataMissing', 'true');
+
+      setTimeout(() => {
+        console.log("Redirecting to closing page...");
+        window.location.href = 'closing-page.html';
+      }, 2000);
     }
 
     // Initialize voice analysis

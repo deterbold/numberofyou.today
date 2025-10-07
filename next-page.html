@@ -203,7 +203,13 @@
     async function startCamera() {
       try {
         console.log("Starting camera feed...");
-        
+
+        // Check if getUserMedia is available
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          console.error("Camera API not available");
+          return false;
+        }
+
         const constraints = {
           video: {
             width: { ideal: 1280 },
@@ -213,10 +219,10 @@
         };
 
         stream = await navigator.mediaDevices.getUserMedia(constraints);
-        
+
         video = document.getElementById('video');
         video.srcObject = stream;
-        
+
         await new Promise((resolve) => {
           video.onloadedmetadata = () => {
             resolve();
@@ -233,6 +239,8 @@
         return true;
       } catch (error) {
         console.error("Error starting camera:", error);
+        console.error("Error name:", error.name);
+        console.error("Error message:", error.message);
         return false;
       }
     }
@@ -368,7 +376,20 @@
       const modelsSuccess = await loadModels();
       if (!modelsSuccess) {
         console.error("Failed to load facial recognition models");
-        document.getElementById('loadingText').textContent = 'Failed to load AI models';
+        document.getElementById('loadingText').innerHTML =
+          '<span style="color: #ff6b6b;">Failed to load AI models</span>';
+
+        // Set default face data
+        localStorage.setItem('cameraDataMissing', 'true');
+        localStorage.setItem('age', '30');
+        localStorage.setItem('gender', 'unknown');
+        localStorage.setItem('mood', 'neutral');
+
+        // Redirect to voice analysis after 2 seconds
+        setTimeout(() => {
+          console.log("Redirecting to voice analysis without AI models...");
+          window.location.href = 'voice-analysis.html';
+        }, 2000);
         return;
       }
 
@@ -381,7 +402,20 @@
       const cameraSuccess = await startCamera();
       if (!cameraSuccess) {
         console.error("Failed to start camera");
-        document.getElementById('loadingText').textContent = 'Camera access failed';
+        document.getElementById('loadingText').innerHTML =
+          '<span style="color: #ff6b6b;">Camera access not allowed</span>';
+
+        // Set default face data
+        localStorage.setItem('cameraDataMissing', 'true');
+        localStorage.setItem('age', '30');
+        localStorage.setItem('gender', 'unknown');
+        localStorage.setItem('mood', 'neutral');
+
+        // Redirect to voice analysis after 2 seconds
+        setTimeout(() => {
+          console.log("Redirecting to voice analysis without camera data...");
+          window.location.href = 'voice-analysis.html';
+        }, 2000);
         return;
       }
 
