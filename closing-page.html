@@ -506,26 +506,48 @@
       const cameraDataMissing = localStorage.getItem('cameraDataMissing') === 'true';
       const voiceDataMissing = localStorage.getItem('voiceDataMissing') === 'true';
       const locationDataMissing = localStorage.getItem('locationDataMissing') === 'true';
-      
+
       const hasAnyMissingData = cameraDataMissing || voiceDataMissing || locationDataMissing;
-      
+
       if (hasAnyMissingData) {
         document.getElementById('disclaimer').style.display = 'block';
         console.log("⚠️ DISCLAIMER SHOWN: Some data types are missing");
       }
-      
-      // Generate and display random number with appropriate range
-      const randomNumber = generateRandomNumber();
+
+      // Check if we're returning from the dashboard (use existing number)
+      const existingNumber = localStorage.getItem('todaysRandomNumber');
+      const lastGeneratedDate = localStorage.getItem('lastGeneratedDate');
+      const today = new Date().toDateString();
+
+      console.log("🔍 DEBUG - Existing number:", existingNumber);
+      console.log("🔍 DEBUG - Last generated date:", lastGeneratedDate);
+      console.log("🔍 DEBUG - Today's date:", today);
+      console.log("🔍 DEBUG - Dates match:", lastGeneratedDate === today);
+
+      let randomNumber;
+      let isNewSession = true;
+
+      // If we have a number from today, reuse it instead of generating a new one
+      if (existingNumber && lastGeneratedDate === today) {
+        randomNumber = parseInt(existingNumber);
+        isNewSession = false;
+        console.log("📋 REUSING EXISTING NUMBER:", randomNumber);
+      } else {
+        // Generate new random number with appropriate range
+        randomNumber = generateRandomNumber();
+        console.log("🎯 NEW RANDOM NUMBER GENERATED:", randomNumber);
+        console.log("🔍 DEBUG - Reason for new number:", !existingNumber ? "No existing number" : "Date mismatch");
+      }
+
       document.getElementById('randomNumber').textContent = randomNumber;
-      
+
       // Set background color based on the random number
       const colorInfo = setBackgroundColor(randomNumber);
-      
+
       // Log all analysis results to console
       const analysisResults = logAnalysisResults();
-      
-      // Also log the new random number and detailed color info
-      console.log("🎯 NEW RANDOM NUMBER GENERATED:", randomNumber);
+
+      // Log detailed color info
       console.log("🎨 DETAILED COLOR ANALYSIS:");
       console.log("RED (Face Data): R=" + colorInfo.baseRGB.red + " → Final R=" + colorInfo.finalRGB.red);
       console.log("GREEN (Voice Data): G=" + colorInfo.baseRGB.green + " → Final G=" + colorInfo.finalRGB.green);
@@ -534,13 +556,17 @@
       console.log("Final Background Color:", colorInfo.backgroundColor);
       console.log("Text Color:", colorInfo.textColor);
       console.log("Overall Brightness:", Math.round(colorInfo.brightness));
-      
-      // Save data to server for permanent storage and analytics
-      saveDataToServer(analysisResults, randomNumber, colorInfo);
-      
-      // Save the new number to localStorage for potential future reference
-      localStorage.setItem('todaysRandomNumber', randomNumber);
-      localStorage.setItem('lastGeneratedDate', new Date().toDateString());
+
+      // Only save data to server if this is a new session
+      if (isNewSession) {
+        saveDataToServer(analysisResults, randomNumber, colorInfo);
+
+        // Save the new number to localStorage for future reference
+        localStorage.setItem('todaysRandomNumber', randomNumber);
+        localStorage.setItem('lastGeneratedDate', today);
+      } else {
+        console.log("📋 Skipping server save - reusing existing session");
+      }
     }
 
     // Start when page loads
